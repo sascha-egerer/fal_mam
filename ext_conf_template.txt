@@ -1,0 +1,3 @@
+
+# cat=MAM Driver/10; type=string; label=LLL:EXT:fal_mam/Resources/Private/Language/locallang_ext_conf.xlf:fal_mam.connector_name
+fal_mam.connector_name = ""

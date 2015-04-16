@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<T3DataStructure>
+	<meta>
+		<langDisable>1</langDisable>
+	</meta>
+	<ROOT>
+		<type>array</type>
+		<el>
+			<connector_name>
+				<TCEforms>
+					<label>LLL:EXT:fal_mam/Resources/Private/Language/locallang_db.xlf:connector_name</label>
+					<config>
+						<type>input</type>
+						<size>30</size>
+					</config>
+				</TCEforms>
+			</connector_name>
+		</el>
+	</ROOT>
+</T3DataStructure>

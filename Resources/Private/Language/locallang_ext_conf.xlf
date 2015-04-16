@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.0">
+	<file source-language="en" datatype="plaintext" original="messages" date="2012-06-13T20:22:32Z" product-name="fal_mam">
+		<header/>
+		<body>
+			<!-- tt_content fields -->
+			<trans-unit id="fal_mam.connector_name" xml:space="preserve">
+				<source>Name of the Connector in the MAM Config</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>
