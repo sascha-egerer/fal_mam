@@ -1,34 +1,10 @@
 <?php
 namespace Crossmedia\FalMam\Service;
 
-/***************************************************************
- * Copyright notice
- *
- * (c) 2014 Arno Dudek <webmaster@adgrafik.at>
- * All rights reserved
- *
- * This script is part of the TYPO3 project. The TYPO3 project is
- * free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * The GNU General Public License can be found at
- * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
- * from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+use Crossmedia\FalMam\Error\MamApiException;
 
 
-class MamClient {
+class MamClient implements \TYPO3\CMS\Core\SingletonInterface{
 
 	/**
 	 * @var string
@@ -48,6 +24,26 @@ class MamClient {
 	/**
 	 * @var string
 	 */
+	protected $connectorName;
+
+	/**
+	 * @var string
+	 */
+	protected $username;
+
+	/**
+	 * @var string
+	 */
+	protected $password;
+
+	/**
+	 * @var string
+	 */
+	protected $customer;
+
+	/**
+	 * @var string
+	 */
 	protected $sessionId;
 
 	/**
@@ -55,10 +51,33 @@ class MamClient {
 	 */
 	protected $configHash;
 
-	/**
-	 * @var string
-	 */
-	protected $connectorName;
+	public function __construct($autologin = TRUE) {
+		if ($autologin === TRUE) {
+			$this->initialize();
+		}
+	}
+
+	public function __destruct() {
+		$this->logout();
+	}
+
+	public function initialize() {
+		 if(isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
+			$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);
+			$configuration = $configuration['fal_mam.'];
+
+			$this->setBaseUrl($configuration['base_url']);
+			$this->setConnectorName($configuration['connector_name']);
+			$this->username = $configuration['username'];
+			$this->password = $configuration['password'];
+			$this->customer = $configuration['customer'];
+
+			$this->login();
+
+			$connectorConfig = $this->getConnectorConfig();
+			$this->configHash = $connectorConfig['config_hash'];
+		}
+	}
 
 	/**
 	 * @param string $baseUrl
@@ -119,6 +138,70 @@ class MamClient {
 	}
 
 	/**
+	 * @param string $username
+	 */
+	public function setUsername($username) {
+		$this->username = $username;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getUsername() {
+		return $this->username;
+	}
+
+	/**
+	 * @param string $password
+	 */
+	public function setPassword($password) {
+		$this->password = $password;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getPassword() {
+		return $this->password;
+	}
+
+	/**
+	 * @param string $customer
+	 */
+	public function setCustomer($customer) {
+		$this->customer = $customer;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getCustomer() {
+		return $this->customer;
+	}
+
+	public function login() {
+		$response = $this->getRequest('login', array(
+			$this->username,
+			$this->password,
+			$this->customer
+		));
+		if (isset($response['sessionID'])) {
+			$this->sessionId = $response['sessionID'];
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+	public function logout() {
+		if ($this->sessionId !== NULL) {
+			$this->getRequest('logout', array(
+				$this->sessionId
+			));
+			$this->sessionId = NULL;
+		}
+	}
+
+	/**
 	 * Get configuration for a connector from MAM
 	 *
 	 * @apiparam session_id - Usersession
@@ -127,10 +210,10 @@ class MamClient {
 	 * @param string $connectorName
 	 * @return array $configuration
 	 */
-	public function getConnectorConfig($connectorName) {
+	public function getConnectorConfig($connectorName = NULL) {
 		$configuration = $this->getRequest('getConnectorConfig', array(
 			$this->sessionId,
-			$connectorName
+			($connectorName ? $connectorName : $this->connectorName)
 		));
 		return $configuration;
 	}
@@ -146,7 +229,6 @@ class MamClient {
 	 * @apiparam event_id - Die Id des ersten Events
 	 * @apiparam config_hash - MD5. Hash der Konfiguration, um Änderungen an der Konfiguration zu erkennen.
 	 *
-	 * @param string $connectorName
 	 * @param  integer $eventId
 	 * @return array $events
 	 *
@@ -168,6 +250,32 @@ class MamClient {
 	}
 
 	/**
+	 * Start a synchronization
+	 *
+	 * Dieser Service liefert nicht alle IDs aus maximal 1000.
+	 * Es sind alle Events ausgeliefert, sobald 0 Werte zurückgegeben werden.
+	 *
+	 * @apiparam session_id - Usersession
+	 * @apiparam connector_name - Name des Connectors
+	 * @apiparam event_id - Die Id des ersten Events
+	 * @apiparam offset - offset der IDs
+	 *
+	 * @param integer $eventId
+	 * @param integer $offset
+	 * @param string $connectorName
+	 * @return array $events
+	 */
+	public function synchronize($eventId, $offset = 0, $connectorName = NULL) {
+		$result = $this->getRequest('synchronize', array(
+			$this->sessionId,
+			$connectorName ? $connectorName : $this->connectorName,
+			$eventId,
+			$offset
+		));
+		return $result;
+	}
+
+	/**
 	 * Get events from MAM starting from a specific event id
 	 *
 	 * Dieser Service liefert nicht alle IDs aus maximal 1000.
@@ -178,14 +286,19 @@ class MamClient {
 	 * @apiparam ids - Die Ids des Beans
 	 *
 	 * @param string $connectorName
-	 * @param integer $objectId
+	 * @param integer|array $objectIds
+	 * @param string $connectorName
 	 * @return array $beans
 	 */
-	public function getBeans($objectId) {
+	public function getBeans($objectIds, $connectorName = NULL) {
+		if (!is_array($objectIds)) {
+			$objectIds = array($objectIds);
+		}
+
 		$beans = $this->getRequest('getBeans', array(
 			$this->sessionId,
-			$this->connectorName,
-			array($objectId)
+			$connectorName ? $connectorName : $this->connectorName,
+			$objectIds
 		));
 		return $beans;
 	}
@@ -210,18 +323,22 @@ class MamClient {
 			'id' => $objectId
 		);
 		$uri = $this->dataUrl . '?' . http_build_query($query);
-		return \Requests::get($uri)->body;
+		return $this->doGetRequest($uri);
 	}
 
 	public function getRequest($method, $parameter) {
 		$uri = $this->restUrl . '&method=' . $method . '&parameter=' . json_encode($parameter);
-		$request = \Requests::get($uri);
-		$result = json_decode($request->body, TRUE);
-		if ($result['code'] !== 0) {
-			var_dump($uri, $request->body);
-			//todo error handling
+		$response = $this->doGetRequest($uri);
+		$result = json_decode($response, TRUE);
+		if (!isset($result['code']) || $result['code'] !== 0) {
+			$message = isset($result['message']) ? $result['message'] : 'unkown error';
+			throw new MamApiException($message);
 		}
 		return $result['result'];
+	}
+
+	public function doGetRequest($uri) {
+		return \Requests::get($uri)->body;
 	}
 }
 

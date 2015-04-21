@@ -7,6 +7,21 @@
 			<trans-unit id="fal_mam.connector_name" xml:space="preserve">
 				<source>Name of the Connector in the MAM Config</source>
 			</trans-unit>
+			<trans-unit id="fal_mam.base_url" xml:space="preserve">
+				<source>Base for MAM API Communication</source>
+			</trans-unit>
+			<trans-unit id="fal_mam.username" xml:space="preserve">
+				<source>Username</source>
+			</trans-unit>
+			<trans-unit id="fal_mam.password" xml:space="preserve">
+				<source>Password</source>
+			</trans-unit>
+			<trans-unit id="fal_mam.customer" xml:space="preserve">
+				<source>Customer name in MAM</source>
+			</trans-unit>
+			<trans-unit id="fal_mam.base_path" xml:space="preserve">
+				<source>Local path for stored files</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

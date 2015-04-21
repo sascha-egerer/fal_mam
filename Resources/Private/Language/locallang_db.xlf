@@ -1,12 +1,23 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<xliff version="1.0">
-	<file source-language="en" datatype="plaintext" original="messages" date="2012-06-13T20:22:32Z" product-name="fal_mam">
-		<header/>
-		<body>
-			<!-- tt_content fields -->
-			<trans-unit id="connector_name" xml:space="preserve">
-				<source>Connector Name</source>
-			</trans-unit>
-		</body>
-	</file>
-</xliff>
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+    <meta type="array">
+        <type>database</type>
+        <description>Language labels for database tables/fields belonging to extension 'fal_mam'</description>
+    </meta>
+    <data type="array">
+        <languageKey index="default" type="array">
+            <label index="tx_falmam_state">MAM Sychnronization State</label>
+            <label index="tx_falmam_state.connector_name">Connector Name</label>
+            <label index="tx_falmam_state.config_hash">Last seen Configuration Hash</label>
+            <label index="tx_falmam_state.event_id">Last processed Event ID</label>
+            <label index="tx_falmam_log">Log</label>
+            <label index="tx_falmam_log.connector_name">Connector Name</label>
+            <label index="tx_falmam_log.config_hash">Configuration Hash</label>
+            <label index="tx_falmam_log.event_id">Base Event ID</label>
+            <label index="tx_falmam_log.start_time">Start Time</label>
+            <label index="tx_falmam_log.end_time">End Time</label>
+            <label index="tx_falmam_log.event_count">Events processed</label>
+            <label index="tx_falmam_log.runtime">Runtime</label>
+        </languageKey>
+    </data>
+</T3locallang>
