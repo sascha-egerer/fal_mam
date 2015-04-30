@@ -12,8 +12,15 @@ $registerDriver->registerDriverClass(
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['\Crossmedia\FalMam\Task\EventHandler'] = array(
     'extension'        => $_EXTKEY,
     'title'            => 'TYPO3 MAM EventHandler',
-    'description'      => 'This task handles pending events from the mam api',
+    'description'      => 'This task fetches events and writes them to a queue',
     'additionalFields' => '\\Crossmedia\\FalMam\\Task\\EventHandlerFieldProvider'
+);
+
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['\Crossmedia\FalMam\Task\EventQueueHandler'] = array(
+    'extension'        => $_EXTKEY,
+    'title'            => 'TYPO3 MAM Event Queue Handler',
+    'description'      => 'This task takes events out of the queue and processes them',
+    'additionalFields' => '\\Crossmedia\\FalMam\\Task\\EventQueueHandlerFieldProvider'
 );
 
 ?>

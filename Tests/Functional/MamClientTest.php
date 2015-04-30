@@ -344,7 +344,7 @@ class MamClientTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 		$this->assertCount(1, $beans);
 		$this->assertEquals($beans[0]['id'], 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7');
-		$this->assertEquals($beans[0]['properties']['data_name']['value'], 'colorsmoke4.1.tif');
+		$this->assertEquals($beans[0]['properties']['data_name'], 'colorsmoke4.1.tif');
 	}
 
 	/**

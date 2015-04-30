@@ -18,6 +18,19 @@
             <label index="tx_falmam_log.end_time">End Time</label>
             <label index="tx_falmam_log.event_count">Events processed</label>
             <label index="tx_falmam_log.runtime">Runtime</label>
+            <label index="tx_falmam_event_queue">Event Queue</label>
+            <label index="tx_falmam_event_queue.event_id">Event ID</label>
+            <label index="tx_falmam_event_queue.status">Status</label>
+            <label index="tx_falmam_event_queue.runtime">Runtime</label>
+            <label index="tx_falmam_event_queue.object_id">Object ID</label>
+            <label index="tx_falmam_event_queue.event_type">Event Type</label>
+            <label index="tx_falmam_event_queue.target">Event Target</label>
+            <label index="tx_falmam_event_queue.mam_shell_path">Shell path to MAM files</label>
+            <label index="tx_falmam_event_queue.skipuntil">Skip this event until the timestamp has passed</label>
+            <label index="tx_falmam_mapping">Mapping</label>
+            <label index="tx_falmam_mapping.connector_name">Connector Name</label>
+            <label index="tx_falmam_mapping.mam_field">MAM Field</label>
+            <label index="tx_falmam_mapping.fal_field">FAL Field</label>
         </languageKey>
     </data>
 </T3locallang>

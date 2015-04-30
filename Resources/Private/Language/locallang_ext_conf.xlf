@@ -22,6 +22,9 @@
 			<trans-unit id="fal_mam.base_path" xml:space="preserve">
 				<source>Local path for stored files</source>
 			</trans-unit>
+			<trans-unit id="fal_mam.storage_pid" xml:space="preserve">
+				<source>PID of a Sysfolder to Store configuration and event queue</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

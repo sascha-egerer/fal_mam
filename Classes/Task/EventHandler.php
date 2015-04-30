@@ -1,8 +1,11 @@
 <?php
 namespace Crossmedia\FalMam\Task;
 
+use Crossmedia\FalMam\Service\DbHandler;
+use Crossmedia\FalMam\Service\FileHandler;
 use Crossmedia\FalMam\Service\MamClient;
 use Crossmedia\FalMam\Task\EventHandlerState;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
 
@@ -25,122 +28,79 @@ class EventHandler extends AbstractTask {
 	protected $state;
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\Page\PageRepository
+	 * @var \Crossmedia\FalMam\Service\FileHandler
 	 */
-	protected $pageRepository;
+	protected $fileHandler;
+
+	/**
+	 * @var \Crossmedia\FalMam\Service\DbHandler
+	 */
+	protected $dbHandler;
+
+	/**
+	 * @var \Crossmedia\FalMam\Service\Configuration
+	 */
+	protected $configuration;
 
 	public function execute() {
-		$this->objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
-		$this->client = $this->objectManager->get('\Crossmedia\FalMam\Service\MamClient');
-		$this->dataHandler = $this->objectManager->get('\TYPO3\CMS\Core\DataHandling\DataHandler');
-		$this->sys_page = $this->objectManager->get('\TYPO3\CMS\Frontend\Page\PageRepository');
-		$this->state = $this->objectManager->get('\Crossmedia\FalMam\Task\EventHandlerState');
+		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		$this->client = $objectManager->get('\Crossmedia\FalMam\Service\MamClient');
+		$this->dataHandler = $objectManager->get('\TYPO3\CMS\Core\DataHandling\DataHandler');
+		$this->dbHandler = $objectManager->get('\Crossmedia\FalMam\Service\DbHandler');
+		$this->fileHandler = $objectManager->get('\Crossmedia\FalMam\Service\FileHandler');
+		$this->state = $objectManager->get('\Crossmedia\FalMam\Task\EventHandlerState');
+		$this->configuration = $objectManager->get('\Crossmedia\FalMam\Service\Configuration');
 
-		$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);
-		$configuration = $configuration['fal_mam.'];
-		$this->basePath = $configuration['base_path'];
 
 		if ($this->hasConfigurationChanged()) {
-			echo 'configuration has changed';
-			$this->synchronize();
-		} else {
-			echo 'configuration has not changed';
-
-			$events = $this->client->getEvents($this->state->getEventId());
-			foreach ($events as $event) {
-				$this->processEvent($event);
-			}
+			// notify someone to update the configuration
 		}
-	}
 
-	public function synchronize() {
-		$result = $this->client->synchronize(
-			$this->state->getSyncId(),
-			$this->state->getSyncOffset()
+		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			'COUNT(*) as pending_events',
+			'tx_falmam_event_queue',
+			'status = "NEW" AND skipuntil < ' . time()
 		);
 
-		if (count($result['ids']) === 0) {
-			// full sync finished, set config hash to resume normal event-handling
-			$this->state->setSyncId(0);
-			$this->state->setSyncOffset(0);
-			$this->state->setConfigHash($this->client->getConfigHash());
-			$this->state->save();
-			return;
-		}
-
-		// todo: actually implement synchronization once it's running on the
-		// mam side
-
-		// $beans = $this->client->getBeans($result['ids'], 'contact_pap_connector');
-
-		// foreach ($beans as $bean) {
-		// 	var_dump($bean);
+		// if ($row['pending_events'] > 300) {
+		// 	return;
 		// }
+		//
+		//
+		$eventTypes = array(
+			0 => 'delete',
+			1 => 'update',
+			2 => 'create'
+		);
+		$targetTypes = array(
+			0 => 'metadata',
+			1 => 'file',
+			2 => 'both'
+		);
 
-		// increase offset to check for more sync jobs
-		$this->state->setSyncId($result['event_id']);
-		$this->state->increaseSyncOffset();
-	}
+		while (count($events = $this->client->getEvents($this->state->getEventId() + 1)) > 0) {
+			// $start = microtime(TRUE);
+			$data = array();
+			foreach ($events as $key => $event) {
+				$data['tx_falmam_event_queue']['NEW' . $event['id']] = array(
+					'pid' => $this->configuration->storage_pid,
+					'event_id' => $event['id'],
+					'event_type' => $eventTypes[$event['event_type']],
+					'target' => $targetTypes[$event['object_type']],
+					'object_id' => $event['object_id'],
+					'status' => 'NEW'
+				);
+			}
 
-	/**
-	 * process an event
-	 *
-	 * @param  array $event
-	 * @return void
-	 */
-	public function processEvent($event) {
-		switch ($event['event_type']) {
-			case 0: // delete
-				$this->processDeleteEvent($event);
-				break;
+			$this->dataHandler->start($data, array());
+			$this->dataHandler->process_datamap();
+			// echo count($events) . ': ' . (microtime(TRUE) - $start) . chr(10);
 
-			case 1: // update
-				$this->processUpdateEvent($event);
-				break;
-
-			case 2: // create
-				$this->processCreateEvent($event);
-				break;
-
-			default:
-				// todo: wtf => exception
-				break;
+			$this->state->setEventId($event['id']);
+			$this->state->save();
 		}
-	}
 
-	/**
-	 * process a delete event
-	 *
-	 * @param  array $event
-	 * @return void
-	 */
-	public function processDeleteEvent($event) {
-		// echo 'delete' . chr(10);
-	}
-
-	/**
-	 * process a update event
-	 *
-	 * @param  array $event
-	 * @return void
-	 */
-	public function processUpdateEvent($event) {
-		// echo 'update' . chr(10);
-	}
-
-	/**
-	 * process a create event
-	 *
-	 * @param  array $event
-	 * @return void
-	 */
-	public function processCreateEvent($event) {
-		// echo 'create' . chr(10);
-		// $beans = $this->client->getBeans($event['object_id']);
-		// todo: implement metadata update when mam is ready
-
-		$filepath = $this->basePath . $event['object_id'];
-		file_put_contents($filepath, $this->client->getDerivate($event['object_id']));
+		return TRUE;
 	}
 
 	/**

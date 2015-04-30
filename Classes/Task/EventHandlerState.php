@@ -1,7 +1,10 @@
 <?php
 namespace Crossmedia\FalMam\Task;
 
+use Crossmedia\FalMam\Service\MamClient;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Page\PageRepository;
 
 class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 
@@ -16,14 +19,6 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @inject
 	 */
 	protected $dataHandler;
-
-	/**
-	 * @var \TYPO3\CMS\Frontend\Page\PageRepository
-	 * @inject
-	 */
-	protected $pageRepository;
-
-
 
 	/**
 	 * @var string
@@ -55,13 +50,24 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 */
 	protected $uid = 'NEW';
 
-	public function __construct(\Crossmedia\FalMam\Service\MamClient $client, \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler, \TYPO3\CMS\Frontend\Page\PageRepository $pageRepository) {
-		$this->client = $client;
-		$this->dataHandler = $dataHandler;
-		$this->pageRepository = $pageRepository;
+	/**
+	 * @var integer
+	 */
+	protected $pid = 0;
+
+	public function __construct() {
+		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		$this->client = $objectManager->get('\Crossmedia\FalMam\Service\MamClient');
+		$this->dataHandler = $objectManager->get('\TYPO3\CMS\Core\DataHandling\DataHandler');
+
+		if(isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
+			$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);
+			$configuration = $configuration['fal_mam.'];
+			$this->connectorName = $configuration['connector_name'];
+			$this->pid = $configuration['storage_pid'];
+		}
 
 		if (!$this->load()) {
-			$this->connectorName = $client->getConnectorName();
 			$this->save();
 		}
 	}
@@ -70,8 +76,8 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'*',
 			'tx_falmam_state',
-			'connector_name = "' . $this->client->getConnectorName() . '"'
- 		);
+			'connector_name = "' . $this->connectorName . '"'
+		);
 
  		if (empty($rows)) {
  			return false;
@@ -104,32 +110,14 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 		);
 
  		if ($this->uid == 'NEW') {
-			$data['tx_falmam_state'][$this->uid]['pid'] = $this->locateRootPageUid();
+			$data['tx_falmam_state'][$this->uid]['pid'] = $this->pid;
  		}
 
 		$this->dataHandler->start($data, array());
-		$this->dataHandler->process_datamap();
+		$result = $this->dataHandler->process_datamap();
 
 		if ($this->uid == 'NEW') {
 			$this->uid = $this->dataHandler->substNEWwithIDs[$this->uid];
-		}
-	}
-
-	/**
-	 * locate a proper pid of the root page to put state table entries on.
-	 * the root page is determined by the pid of the first root sys_template
-	 * in the database
-	 *
-	 * @return int
-	 */
-	public function locateRootPageUid() {
-		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-			'pid',
-			'sys_template',
-			'root = 1 ' . $this->pageRepository->enableFields('sys_template')
- 		);
- 		if (count($rows) > 0) {
-			return $rows[0]['pid'];
 		}
 	}
 

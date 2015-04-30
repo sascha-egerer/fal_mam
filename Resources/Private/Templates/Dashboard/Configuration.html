@@ -1,0 +1,44 @@
+<f:layout name="Backend" />
+
+<f:section name="docheader-buttons">
+	<f:be.buttons.icon uri="javascript:document.configurationform.submit();" icon="actions-document-save" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:save')}" />
+
+	<strong>saving the configuration will start a full synchronisation of all assets.</strong>
+</f:section>
+
+<f:section name="module-headline">
+	<h3>Configuration</h3>
+</f:section>
+
+<f:section name="Content">
+	<f:flashMessages renderMode="div" />
+
+	<div class="headerRow ui-helper-clearfix">
+		<div class="typo3-extensionmanager-headerRowLeft">
+		</div>
+		<div class="typo3-extensionmanager-headerRowRight">
+		</div>
+	</div>
+	<f:form action="configuration" name="configurationform">
+	<table id="typo3-extension-list" class="t3-table typo3-extension-list">
+		<thead>
+			<tr>
+				<th>MAM Field</th>
+				<th>Datatype</th>
+				<th>FAL Field</th>
+			</tr>
+		</thead>
+		<tbody>
+			<f:for each="{fields}" as="field">
+				<tr>
+					<td>{field.fieldName}</td>
+					<td>{field.fieldType}</td>
+					<td>
+						<f:form.select name="fields[{field.uid}]" options="{falFields}" value="{field.fal_field}" />
+					</td>
+				</tr>
+			</f:for>
+		</tbody>
+	</table>
+	</f:form>
+</f:section>

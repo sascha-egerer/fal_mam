@@ -4,7 +4,7 @@ namespace Crossmedia\FalMam\Service;
 use Crossmedia\FalMam\Error\MamApiException;
 
 
-class MamClient implements \TYPO3\CMS\Core\SingletonInterface{
+class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var string
@@ -64,13 +64,13 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface{
 	public function initialize() {
 		 if(isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
 			$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);
-			$configuration = $configuration['fal_mam.'];
+			$this->configuration = $configuration['fal_mam.'];
 
-			$this->setBaseUrl($configuration['base_url']);
-			$this->setConnectorName($configuration['connector_name']);
-			$this->username = $configuration['username'];
-			$this->password = $configuration['password'];
-			$this->customer = $configuration['customer'];
+			$this->setBaseUrl($this->configuration['base_url']);
+			$this->setConnectorName($this->configuration['connector_name']);
+			$this->username = $this->configuration['username'];
+			$this->password = $this->configuration['password'];
+			$this->customer = $this->configuration['customer'];
 
 			$this->login();
 
@@ -193,12 +193,12 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface{
 	}
 
 	public function logout() {
-		if ($this->sessionId !== NULL) {
-			$this->getRequest('logout', array(
-				$this->sessionId
-			));
-			$this->sessionId = NULL;
-		}
+		// if ($this->sessionId !== NULL) {
+		// 	$this->getRequest('logout', array(
+		// 		$this->sessionId
+		// 	));
+		// 	$this->sessionId = NULL;
+		// }
 	}
 
 	/**
@@ -235,7 +235,7 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface{
 	 * id - event id
 	 * create_time - time of creation
 	 * object_id - id of the relevant object
-	 * object_type - type of the relevant object (0 = bean, 1 = derivate, 2 = fileaccess)
+	 * object_type - type of the relevant object (0 = bean, 1 = derivate, 2 = both)
 	 * field_name - derivate type
 	 * event_type - type of event (0 = delete, 1 = update, 2 = create)
 	 */
@@ -300,6 +300,10 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface{
 			$connectorName ? $connectorName : $this->connectorName,
 			$objectIds
 		));
+		$beans = $this->normalizeArray($beans);
+		foreach ($beans as $key => $bean) {
+			$beans[$key]['properties']['data_shellpath'] = $this->normalizePath($beans[$key]['properties']['data_shellpath']);
+		}
 		return $beans;
 	}
 
@@ -326,12 +330,34 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface{
 		return $this->doGetRequest($uri);
 	}
 
+	public function saveDerivate($filename, $objectId, $usage = 'Original') {
+		$query = array(
+			'session' => $this->sessionId,
+			'apptype' => 'MAM',
+			'clientType' => 'Web',
+			'usage' => $usage,
+			'id' => $objectId
+		);
+		$uri = $this->dataUrl . '?' . http_build_query($query);
+
+		mkdir(dirname($filename), 0777, TRUE);
+		$fp = fopen ($filename, 'w+');
+		$ch = curl_init($uri);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 500);
+		curl_setopt($ch, CURLOPT_FILE, $fp);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_exec($ch);
+		curl_close($ch);
+		fclose($fp);
+	}
+
 	public function getRequest($method, $parameter) {
 		$uri = $this->restUrl . '&method=' . $method . '&parameter=' . json_encode($parameter);
 		$response = $this->doGetRequest($uri);
 		$result = json_decode($response, TRUE);
 		if (!isset($result['code']) || $result['code'] !== 0) {
-			$message = isset($result['message']) ? $result['message'] : 'unkown error';
+			var_dump($result, $uri, $this->sessionId);
+			$message = isset($result['message']) ? $result['message'] : 'MamClient: unkown error';
 			throw new MamApiException($message);
 		}
 		return $result['result'];
@@ -339,6 +365,27 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface{
 
 	public function doGetRequest($uri) {
 		return \Requests::get($uri)->body;
+	}
+
+	public function normalizeArray($input) {
+		if (is_array($input)) {
+			foreach ($input as $key => $value) {
+				$input[$key] = $this->normalizeArray($value);
+			}
+			if (count($input) == 1 && isset($input['value'])) {
+				$input = $input['value'];
+			}
+		}
+
+		return $input;
+	}
+
+	public function normalizePath($path) {
+		if (strlen($this->configuration['mam_shell_path']) > 0) {
+			$path = rtrim($this->configuration['base_path'], '/') . '/' . ltrim(str_replace($this->configuration['mam_shell_path'], '', $path), '/');
+		}
+		$path = ltrim($path, '/\\');
+		return $path;
 	}
 }
 
