@@ -5,6 +5,9 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 
 
+/**
+ * This class represents a central access to the extension and mapping configuration
+ */
 class Configuration implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
@@ -71,7 +74,13 @@ class Configuration implements \TYPO3\CMS\Core\SingletonInterface {
 			'mam_field'
 		);
 		foreach ($mapping as $key => $value) {
-			$this->mapping[$key] = $value['fal_field'];
+			$valueMap = array();
+			foreach (explode("\n", $value['value_map']) as $row) {
+				$parts = explode(':', $row);
+				$valueMap[trim($parts[0])] = trim($parts[1]);
+			}
+			$value['value_map'] = $valueMap;
+			$this->mapping[$key] = $value;
 		}
 	}
 }

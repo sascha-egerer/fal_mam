@@ -34,9 +34,17 @@ $TCA['tx_falmam_mapping'] = array(
                 'size' => '30',
             )
         ),
+        'value_map' => array(
+            'exclude' => 0,
+            'label' => 'LLL:EXT:fal_mam/Resources/Private/Language/locallang_db.xml:tx_falmam_mapping.value_map',
+            'config' => array(
+                'type' => 'input',
+                'size' => '30',
+            )
+        ),
     ),
     'types' => array(
-        '0' => array('showitem' => 'connector_name;;;;1-1-1, mam_field, fal_field')
+        '0' => array('showitem' => 'connector_name;;;;1-1-1, mam_field, fal_field, value_map')
     ),
     'palettes' => array(
         '1' => array('showitem' => '')

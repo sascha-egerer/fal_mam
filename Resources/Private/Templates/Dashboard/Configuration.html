@@ -24,20 +24,33 @@
 		<thead>
 			<tr>
 				<th>MAM Field</th>
-				<th>Datatype</th>
 				<th>FAL Field</th>
+				<th>Value Map</th>
 			</tr>
 		</thead>
 		<tbody>
 			<f:for each="{fields}" as="field">
 				<tr>
 					<td>{field.fieldName}</td>
-					<td>{field.fieldType}</td>
 					<td>
 						<f:form.select name="fields[{field.uid}]" options="{falFields}" value="{field.fal_field}" />
 					</td>
+					<td>
+						<f:form.textarea name="valueMaps[{field.uid}]" value="{field.value_map}" />
+					</td>
 				</tr>
 			</f:for>
+			<tr>
+				<td></td>
+				<td></td>
+				<td>
+					<br />
+					<strong>Example:</strong><br />
+					english: 1<br />
+					german: 2<br />
+					...
+				</td>
+			</tr>
 		</tbody>
 	</table>
 	</f:form>

@@ -340,6 +340,7 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		);
 		$uri = $this->dataUrl . '?' . http_build_query($query);
 
+		ob_start();
 		mkdir(dirname($filename), 0777, TRUE);
 		$fp = fopen ($filename, 'w+');
 		$ch = curl_init($uri);
@@ -349,6 +350,7 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		curl_exec($ch);
 		curl_close($ch);
 		fclose($fp);
+		$output = ob_get_clean();
 	}
 
 	public function getRequest($method, $parameter) {
@@ -374,6 +376,9 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 			if (count($input) == 1 && isset($input['value'])) {
 				$input = $input['value'];
+			}
+			if (is_array($input) && count($input) == 0) {
+				$input = NULL;
 			}
 		}
 

@@ -4,6 +4,9 @@ namespace Crossmedia\FalMam\ConfigurationType;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extensionmanager\ViewHelpers\Form\TypoScriptConstantsViewHelper;
 
+/**
+ *  This class is used to display a password input field in the extension configuration
+ */
 class Password {
 
     /**

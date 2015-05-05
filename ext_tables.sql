@@ -77,7 +77,15 @@ CREATE TABLE tx_falmam_mapping (
     connector_name tinytext,
     mam_field tinytext,
     fal_field tinytext,
+    value_map text,
 
     PRIMARY KEY (uid),
     KEY parent (pid)
+);
+
+#
+# Table structure for table 'sys_file'
+#
+CREATE TABLE sys_file (
+    tx_falmam_id tinytext
 );

@@ -55,6 +55,11 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 */
 	protected $pid = 0;
 
+	/**
+	 * @var boolean
+	 */
+	protected $loaded = FALSE;
+
 	public function __construct() {
 		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
 		$this->client = $objectManager->get('\Crossmedia\FalMam\Service\MamClient');
@@ -66,10 +71,18 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 			$this->connectorName = $configuration['connector_name'];
 			$this->pid = $configuration['storage_pid'];
 		}
+	}
+
+	public function initialize() {
+		if ($this->loaded === TRUE) {
+			return;
+		}
 
 		if (!$this->load()) {
 			$this->save();
 		}
+
+		$this->loaded = TRUE;
 	}
 
 	public function load() {
@@ -125,6 +138,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @param string $connectorName
 	 */
 	public function setConnectorName($connectorName) {
+		$this->initialize();
 		$this->connectorName = $connectorName;
 	}
 
@@ -132,6 +146,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @return string
 	 */
 	public function getConnectorName() {
+		$this->initialize();
 		return $this->connectorName;
 	}
 
@@ -139,6 +154,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @param string $configHash
 	 */
 	public function setConfigHash($configHash) {
+		$this->initialize();
 		$this->configHash = $configHash;
 	}
 
@@ -146,6 +162,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @return string
 	 */
 	public function getConfigHash() {
+		$this->initialize();
 		return $this->configHash;
 	}
 
@@ -153,6 +170,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @param integer $eventId
 	 */
 	public function setEventId($eventId) {
+		$this->initialize();
 		$this->eventId = $eventId;
 	}
 
@@ -160,6 +178,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @return integer
 	 */
 	public function getEventId() {
+		$this->initialize();
 		return $this->eventId;
 	}
 
@@ -167,6 +186,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @param integer $syncId
 	 */
 	public function setSyncId($syncId) {
+		$this->initialize();
 		$this->syncId = $syncId;
 	}
 
@@ -174,6 +194,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @return integer
 	 */
 	public function getSyncId() {
+		$this->initialize();
 		return $this->syncId;
 	}
 
@@ -181,6 +202,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @param integer $syncOffset
 	 */
 	public function setSyncOffset($syncOffset) {
+		$this->initialize();
 		$this->syncOffset = $syncOffset;
 	}
 
@@ -188,12 +210,14 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	 * @return integer
 	 */
 	public function getSyncOffset() {
+		$this->initialize();
 		return $this->syncOffset;
 	}
 
 	/**
 	 */
 	public function increaseSyncOffset() {
+		$this->initialize();
 		$this->syncOffset = $this->syncOffset + 1000;
 	}
 }

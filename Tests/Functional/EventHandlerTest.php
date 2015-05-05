@@ -16,288 +16,52 @@ class EventHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 	protected $testExtensionsToLoad = array('typo3conf/ext/fal_mam');
 
+
 	/**
-	 * When the config_hash has changed since the last run we need to update
-	 * all assets using the synchronize method.
+	 * When new events are returned by the getEvents method the state needs
+	 * to be updated to the last returned event id
 	 *
 	 * @test
 	 * @return void
 	 */
-	public function synchronizeWhenConfigChanged() {
+	public function lastEventIdIsSavedToState() {
 		$client = $this->getMock('\Crossmedia\FalMam\Service\MamClient');
 		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
-		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', array('synchronize', 'processEvents'));
+		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', array('saveEvents'));
 		$eventHandler->injectClient($client);
 		$eventHandler->injectState($state);
 
 		$state->expects($this->once())->method('getConfigHash')->will($this->returnValue('foo'));
-		$client->expects($this->once()) ->method('getConfigHash')->will($this->returnValue('bar'));
-
-		$eventHandler->expects($this->once()) ->method('synchronize');
-		$eventHandler->expects($this->never())->method('processEvents');
-		$eventHandler->execute();
-	}
-
-	/**
-	 * When the config_hash has not changed since the last run we can safely
-	 * use the getEvents method to check for new events and handle them.
-	 *
-	 * @test
-	 * @return void
-	 */
-	public function processEventsWhenConfigHasNotChanged() {
-		$client = $this->getMock('\Crossmedia\FalMam\Service\MamClient');
-		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
-		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', array('synchronize', 'processEvents'));
-		$eventHandler->injectClient($client);
-		$eventHandler->injectState($state);
-
-		$state->expects($this->once())->method('getConfigHash')->will($this->returnValue('foo'));
-		$client->expects($this->once()) ->method('getConfigHash')->will($this->returnValue('foo'));
-
-		$eventHandler->expects($this->never()) ->method('synchronize');
-		$eventHandler->expects($this->once())->method('processEvents');
-		$eventHandler->execute();
-	}
-
-	/**
-	 * When we get an event of event_type = 0 we need to call the processDeleteEvent
-	 * method to do everything needed to remove an asset from the database and
-	 * filesystem
-	 *
-	 * @test
-	 * @return void
-	 */
-	public function eventType0ShouldBeProcessedAsDeleteEvent() {
-		$client = $this->getMock('\Crossmedia\FalMam\Service\MamClient');
-		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
-		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', array('processCreateEvent', 'processUpdateEvent', 'processDeleteEvent'));
-		$eventHandler->injectClient($client);
-		$eventHandler->injectState($state);
-
-		$state->expects($this->once())
-			  ->method('getEventId')
-			  ->will($this->returnValue('123'));
-
-		$client->expects($this->once())
-			   ->method('getEvents')
-			   ->will($this->returnValue(array(
-			   		array(
-			   			'event_type' => 0
-			   		)
-			   )));
-
-		$eventHandler->expects($this->never())->method('processCreateEvent');
-		$eventHandler->expects($this->never())->method('processUpdateEvent');
-		$eventHandler->expects($this->once())->method('processDeleteEvent');
-		$eventHandler->execute();
-	}
-
-	/**
-	 * When we encounter an event of event_type = 1 we need to call the
-	 * processUpdateEvent method to do everything needed to update an asset in
-	 * the database of filesystem.
-	 *
-	 * @test
-	 * @return void
-	 */
-	public function eventType1ShouldBeProcessedAsUpdateEvent() {
-		$client = $this->getMock('\Crossmedia\FalMam\Service\MamClient');
-		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
-		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', array('processCreateEvent', 'processUpdateEvent', 'processDeleteEvent'));
-		$eventHandler->injectClient($client);
-		$eventHandler->injectState($state);
-
-		$state->expects($this->once())
-			  ->method('getEventId')
-			  ->will($this->returnValue('123'));
-
-		$client->expects($this->once())
-			   ->method('getEvents')
-			   ->will($this->returnValue(array(
-			   		array(
-			   			'event_type' => 1
-			   		)
-			   )));
-
-		$eventHandler->expects($this->never())->method('processCreateEvent');
-		$eventHandler->expects($this->once())->method('processUpdateEvent');
-		$eventHandler->expects($this->never())->method('processDeleteEvent');
-		$eventHandler->execute();
-	}
-
-	/**
-	 * When we encounter an event of event_type = 2 we need to call the
-	 * processCreateEvent method to to everything needed to create an asset in
-	 * the database and filesystem.
-	 *
-	 * @test
-	 * @return void
-	 */
-	public function eventType2ShouldBeProcessedAsCreateEvent() {
-		$client = $this->getMock('\Crossmedia\FalMam\Service\MamClient');
-		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
-		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', array('processCreateEvent', 'processUpdateEvent', 'processDeleteEvent'));
-		$eventHandler->injectClient($client);
-		$eventHandler->injectState($state);
-
-		$state->expects($this->once())
-			  ->method('getEventId')
-			  ->will($this->returnValue('123'));
-
-		$client->expects($this->once())
-			   ->method('getEvents')
-			   ->will($this->returnValue(array(
-			   		array(
-			   			'event_type' => 2
-			   		)
-			   )));
-
-		$eventHandler->expects($this->once())->method('processCreateEvent');
-		$eventHandler->expects($this->never())->method('processUpdateEvent');
-		$eventHandler->expects($this->never())->method('processDeleteEvent');
-		$eventHandler->execute();
-	}
-
-	/**
-	 *
-	 *
-	 * @test
-	 * @return void
-	 */
-	public function handleCreateEvent() {
-		$this->assertEventCallsHandlingMethods(
-			array(
-				'object_id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
-				'event_type' => 2,
-				'object_type' => 0
-			),
-			array(
-				'fileHandler' => array('createFile' => $this->never()),
-				'dbHandler' => array('createAsset' => $this->once())
-			)
-		);
-		$this->assertEventCallsHandlingMethods(
-			array(
-				'object_id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
-				'event_type' => 2,
-				'object_type' => 1
-			),
-			array(
-				'fileHandler' => array('createFile' => $this->once()),
-				'dbHandler' => array('createAsset' => $this->never())
-			)
-		);
-		$this->assertEventCallsHandlingMethods(
-			array(
-				'object_id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
-				'event_type' => 2,
-				'object_type' => 2
-			),
-			array(
-				'fileHandler' => array('createFile' => $this->once()),
-				'dbHandler' => array('createAsset' => $this->once())
-			)
-		);
-	}
-
-	/**
-	 *
-	 *
-	 * @test
-	 * @return void
-	 */
-	public function handleDeleteEvent() {
-		$this->assertEventCallsHandlingMethods(
-			array(
-				'object_id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
-				'event_type' => 0,
-				'object_type' => 0
-			),
-			array(
-				'fileHandler' => array('deleteFile' => $this->never()),
-				'dbHandler' => array('deleteAsset' => $this->once())
-			)
-		);
-		$this->assertEventCallsHandlingMethods(
-			array(
-				'object_id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
-				'event_type' => 0,
-				'object_type' => 1
-			),
-			array(
-				'fileHandler' => array('deleteFile' => $this->once()),
-				'dbHandler' => array('deleteAsset' => $this->never())
-			)
-		);
-		$this->assertEventCallsHandlingMethods(
-			array(
-				'object_id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
-				'event_type' => 0,
-				'object_type' => 2
-			),
-			array(
-				'fileHandler' => array('deleteFile' => $this->once()),
-				'dbHandler' => array('deleteAsset' => $this->once())
-			)
-		);
-	}
-
-	public function assertEventCallsHandlingMethods($event, $handler) {
-		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', NULL);
-		$client = $this->getMock('\Crossmedia\FalMam\Service\MamClient');
-		$eventHandler->injectClient($client);
-		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
-		$eventHandler->injectState($state);
-		$fileHandler = $this->getMock('\Crossmedia\FalMam\Service\FileHandler');
-		$eventHandler->injectFileHandler($fileHandler);
-		$dbHandler = $this->getMock('\Crossmedia\FalMam\Service\DbHandler');
-		$eventHandler->injectDbHandler($dbHandler);
-
-		$state->expects($this->once())
-			  ->method('getEventId')
-			  ->will($this->returnValue('123'));
-
-		$client->expects($this->once())
-			   ->method('getEvents')
-			   ->will($this->returnValue(array($event)));
-
-		$client->expects($this->any())
-				->method('getBeans')
-				->will($this->returnValue(array(
+		$client->expects($this->exactly(2))
+			->method('getEvents')
+			->will($this->onConsecutiveCalls(
+				array(
 					array(
-						'id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
-						'module_name' => 'contact',
-						'mod_time' => '2015/03/26 13:59:33',
-						'type' => 'default',
-						'properties' => array(
-							'data_preview_sequence_count' => array(
-								'value' => '0'
-							),
-							'data_modification_date' => array(
-								'value' => '16.04.2015 11:19:13'
-							),
-							'data_name' => array(
-								'value' => 'colorsmoke4.1.tif'
-							),
-							'data_id' => array(
-								'value' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7'
-							),
-							'data_subsubtype' => array(
-								'value' => 'image/tiff'
-							),
-							'data_shellpath' => array(
-								'value' => '/usr/local/mam/wanzl/data/PAP-Test/Freigabestatus/'
-							)
-						)
+						'object_id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
+						'event_type' => 2,
+						'object_type' => 0
 					)
-				)));
+				),
+				array()
+			));
 
-		foreach ($handler as $handlerName => $methods) {
-			foreach ($methods as $method => $expectation) {
-				$$handlerName->expects($expectation)->method($method);
-			}
-		}
+		$eventHandler->expects($this->once())
+					->method('saveEvents')
+					->with($this->equalTo(
+			array(
+				"tx_falmam_event_queue" => array(
+					'NEW' => array(
+						"pid" => NULL,
+						"event_id" => NULL,
+						"event_type" => 'create',
+						"target" => 'metadata',
+						"object_id" => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
+						"status" => 'NEW'
+					)
+				)
+			)
+		));
 		$eventHandler->execute();
 	}
+
 }

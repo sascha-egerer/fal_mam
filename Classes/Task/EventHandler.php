@@ -1,8 +1,6 @@
 <?php
 namespace Crossmedia\FalMam\Task;
 
-use Crossmedia\FalMam\Service\DbHandler;
-use Crossmedia\FalMam\Service\FileHandler;
 use Crossmedia\FalMam\Service\MamClient;
 use Crossmedia\FalMam\Task\EventHandlerState;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -28,45 +26,50 @@ class EventHandler extends AbstractTask {
 	protected $state;
 
 	/**
-	 * @var \Crossmedia\FalMam\Service\FileHandler
-	 */
-	protected $fileHandler;
-
-	/**
-	 * @var \Crossmedia\FalMam\Service\DbHandler
-	 */
-	protected $dbHandler;
-
-	/**
 	 * @var \Crossmedia\FalMam\Service\Configuration
 	 */
 	protected $configuration;
 
-	public function execute() {
-		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
-		$this->client = $objectManager->get('\Crossmedia\FalMam\Service\MamClient');
-		$this->dataHandler = $objectManager->get('\TYPO3\CMS\Core\DataHandling\DataHandler');
-		$this->dbHandler = $objectManager->get('\Crossmedia\FalMam\Service\DbHandler');
-		$this->fileHandler = $objectManager->get('\Crossmedia\FalMam\Service\FileHandler');
-		$this->state = $objectManager->get('\Crossmedia\FalMam\Task\EventHandlerState');
-		$this->configuration = $objectManager->get('\Crossmedia\FalMam\Service\Configuration');
+	/**
+	 * @param  \Crossmedia\FalMam\Service\MamClient $client
+	 * @return void
+	 */
+	public function injectClient(\Crossmedia\FalMam\Service\MamClient $client) {
+		$this->client = $client;
+	}
 
+	/**
+	 * @param  \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler
+	 * @return void
+	 */
+	public function injectDataHandler(\TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
+		$this->dataHandler = $dataHandler;
+	}
+
+
+	/**
+	 * @param  \Crossmedia\FalMam\Task\EventHandlerState $state
+	 * @return void
+	 */
+	public function injectState(\Crossmedia\FalMam\Task\EventHandlerState $state) {
+		$this->state = $state;
+	}
+
+	/**
+	 * @param  \Crossmedia\FalMam\Service\Configuration $configuration
+	 * @return void
+	 */
+	public function injectConfiguration(\Crossmedia\FalMam\Service\Configuration $configuration) {
+		$this->configuration = $configuration;
+	}
+
+	public function execute() {
+		$this->initialize();
 
 		if ($this->hasConfigurationChanged()) {
 			// notify someone to update the configuration
 		}
 
-		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
-			'COUNT(*) as pending_events',
-			'tx_falmam_event_queue',
-			'status = "NEW" AND skipuntil < ' . time()
-		);
-
-		// if ($row['pending_events'] > 300) {
-		// 	return;
-		// }
-		//
-		//
 		$eventTypes = array(
 			0 => 'delete',
 			1 => 'update',
@@ -92,8 +95,7 @@ class EventHandler extends AbstractTask {
 				);
 			}
 
-			$this->dataHandler->start($data, array());
-			$this->dataHandler->process_datamap();
+			$this->saveEvents($data);
 			// echo count($events) . ': ' . (microtime(TRUE) - $start) . chr(10);
 
 			$this->state->setEventId($event['id']);
@@ -101,6 +103,27 @@ class EventHandler extends AbstractTask {
 		}
 
 		return TRUE;
+	}
+
+	public function initialize() {
+		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		if ($this->client === NULL) {
+			$this->injectClient($objectManager->get('\Crossmedia\FalMam\Service\MamClient'));
+		}
+		if ($this->dataHandler === NULL) {
+			$this->injectDataHandler($objectManager->get('\TYPO3\CMS\Core\DataHandling\DataHandler'));
+		}
+		if ($this->state === NULL) {
+			$this->injectState($objectManager->get('\Crossmedia\FalMam\Task\EventHandlerState'));
+		}
+		if ($this->configuration === NULL) {
+			$this->injectConfiguration($objectManager->get('\Crossmedia\FalMam\Service\Configuration'));
+		}
+	}
+
+	public function saveEvents($data) {
+		$this->dataHandler->start($data, array());
+		$this->dataHandler->process_datamap();
 	}
 
 	/**

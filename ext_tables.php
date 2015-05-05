@@ -88,4 +88,20 @@ if (TYPO3_MODE === 'BE') {
 
 }
 
+$tempColumns = array(
+    'tx_falmam_id' => array(
+        'exclude' => 0,
+        'label' => 'LLL:EXT:fal_mam/Resources/Private/Language/locallang_db.xml:sys_file.tx_falmam_id',
+        'config' => array(
+            'type' => 'input',
+            'size' => '30',
+        )
+    ),
+);
+
+
+t3lib_div::loadTCA('sys_file');
+t3lib_extMgm::addTCAcolumns('sys_file',$tempColumns,1);
+t3lib_extMgm::addToAllTCAtypes('sys_file','tx_falmam_id;;;;1-1-1');
+
 ?>
