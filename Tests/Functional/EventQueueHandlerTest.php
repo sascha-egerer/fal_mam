@@ -7,7 +7,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Functional test for the DataHandler
  */
-class EventHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
+class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 	/** @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface The object manager */
 	protected $objectManager;
@@ -50,7 +50,7 @@ class EventHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	}
 
 	/**
-	 * If the processing of an event fails it needs to be rescheduled.
+	 * If the processing of an event succeeds it needs to be finnished
 	 *
 	 * @test
 	 * @return void
@@ -82,61 +82,216 @@ class EventHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$eventQueueHandler->execute();
 	}
 
-	public function assertEventCallsHandlingMethods($event, $handler) {
-		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', NULL);
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function createMetadataEventShouldFailIfNoFileIsFound() {
+		extract($this->getEventQueueHandler());
+
+		// $dbHandler->expects($this->once())->method('createAsset');
+		$fileHandler->expects($this->once())->method('fileExists')->will($this->returnValue(FALSE));
+
+		$result = $eventQueueHandler->processEvent(array(
+			'object_id' => 'foo',
+			'event_type' => 'create',
+			'target' => 'metadata'
+		));
+
+		$this->assertFalse($result, 'processCreateEvent should fail if the file does not exist');
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function createFileEventShouldCreateTheFile() {
+		extract($this->getEventQueueHandler());
+
+		$client->expects($this->once())->method('saveDerivate')->with(
+			'/filepath/foo.png',
+			'1234'
+		);
+
+		$eventQueueHandler->processEvent(array(
+			'object_id' => '1234',
+			'event_type' => 'create',
+			'target' => 'file'
+		));
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function createMetadataEventShouldCreateTheAssetIfTheFileExists() {
+		extract($this->getEventQueueHandler());
+
+		$dbHandler->expects($this->once())->method('createAsset');
+		$fileHandler->expects($this->once())->method('fileExists')->will($this->returnValue(TRUE));
+
+		$eventQueueHandler->processEvent(array(
+			'object_id' => '1234',
+			'event_type' => 'create',
+			'target' => 'metadata'
+		));
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function createBothEventShouldCreateTheAssetAndFile() {
+		extract($this->getEventQueueHandler());
+
+		$dbHandler->expects($this->once())->method('createAsset');
+		$fileHandler->expects($this->once())->method('fileExists')->will($this->returnValue(TRUE));
+		$client->expects($this->once())->method('saveDerivate')->with(
+			'/filepath/foo.png',
+			'1234'
+		);
+
+		$eventQueueHandler->processEvent(array(
+			'object_id' => '1234',
+			'event_type' => 'create',
+			'target' => 'both'
+		));
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function deleteMetadataEventShouldDeleteAssetAndField() {
+		extract($this->getEventQueueHandler());
+
+		$dbHandler->expects($this->once())->method('deleteAsset');
+
+		$eventQueueHandler->processEvent(array(
+			'object_id' => '1234',
+			'event_type' => 'delete',
+			'target' => 'metadata'
+		));
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function deleteFileEventShouldDeleteAssetAndField() {
+		extract($this->getEventQueueHandler());
+
+		$dbHandler->expects($this->once())->method('deleteAsset');
+
+		$eventQueueHandler->processEvent(array(
+			'object_id' => '1234',
+			'event_type' => 'delete',
+			'target' => 'file'
+		));
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function updateMetadata() {
+		extract($this->getEventQueueHandler());
+
+		$dbHandler->expects($this->once())->method('updateAsset');
+
+		$eventQueueHandler->processEvent(array(
+			'object_id' => '1234',
+			'event_type' => 'update',
+			'target' => 'metadata'
+		));
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function updateFileContents() {
+		extract($this->getEventQueueHandler());
+
+		$client->expects($this->once())->method('saveDerivate')->with(
+			'/filepath/foo.png',
+			'1234'
+		);
+
+		$eventQueueHandler->processEvent(array(
+			'object_id' => '1234',
+			'event_type' => 'update',
+			'target' => 'file'
+		));
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function updateFilePath() {
+		extract($this->getEventQueueHandler(NULL, '/new-filepath/'));
+
+		$fileHandler->expects($this->once())->method('moveFile')->with(
+			'1234',
+			'foo.png',
+			'/new-filepath/'
+		);
+
+		$client->expects($this->once())->method('saveDerivate')->with(
+			'/new-filepath/foo.png',
+			'1234'
+		);
+
+		$eventQueueHandler->processEvent(array(
+			'object_id' => '1234',
+			'event_type' => 'update',
+			'target' => 'file'
+		));
+	}
+
+	public function getEventQueueHandler($mockMethods = NULL, $filepath = '/filepath/') {
+		$eventQueueHandler = $this->getMock('\Crossmedia\FalMam\Task\EventQueueHandler', $mockMethods);
+
 		$client = $this->getMock('\Crossmedia\FalMam\Service\MamClient');
-		$eventHandler->injectClient($client);
-		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
-		$eventHandler->injectState($state);
-		$fileHandler = $this->getMock('\Crossmedia\FalMam\Service\FileHandler');
-		$eventHandler->injectFileHandler($fileHandler);
-		$dbHandler = $this->getMock('\Crossmedia\FalMam\Service\DbHandler');
-		$eventHandler->injectDbHandler($dbHandler);
-
-		$state->expects($this->once())
-			  ->method('getEventId')
-			  ->will($this->returnValue('123'));
-
-		$client->expects($this->once())
-			   ->method('getEvents')
-			   ->will($this->returnValue(array($event)));
-
+		$eventQueueHandler->injectClient($client);
 		$client->expects($this->any())
 				->method('getBeans')
 				->will($this->returnValue(array(
 					array(
-						'id' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7',
-						'module_name' => 'contact',
-						'mod_time' => '2015/03/26 13:59:33',
-						'type' => 'default',
+						'id' => '1234',
+						'type' => 'file',
 						'properties' => array(
-							'data_preview_sequence_count' => array(
-								'value' => '0'
-							),
-							'data_modification_date' => array(
-								'value' => '16.04.2015 11:19:13'
-							),
-							'data_name' => array(
-								'value' => 'colorsmoke4.1.tif'
-							),
-							'data_id' => array(
-								'value' => 'data_20150416111838_37E3DD68599BAD01C567420BE95FB3F7'
-							),
-							'data_subsubtype' => array(
-								'value' => 'image/tiff'
-							),
-							'data_shellpath' => array(
-								'value' => '/usr/local/mam/wanzl/data/PAP-Test/Freigabestatus/'
-							)
+							'data_name' => 'foo.png',
+							'data_shellpath' => $filepath
 						)
 					)
-				)));
+		)));
 
-		foreach ($handler as $handlerName => $methods) {
-			foreach ($methods as $method => $expectation) {
-				$$handlerName->expects($expectation)->method($method);
-			}
-		}
-		$eventHandler->execute();
+		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
+		$eventQueueHandler->injectState($state);
+
+		$fileHandler = $this->getMock('\Crossmedia\FalMam\Service\FileHandler');
+		$eventQueueHandler->injectFileHandler($fileHandler);
+
+		$dbHandler = $this->getMock('\Crossmedia\FalMam\Service\DbHandler');
+		$eventQueueHandler->injectDbHandler($dbHandler);
+
+		return array(
+			'eventQueueHandler' => $eventQueueHandler,
+			'client'=> $client,
+			'state'=> $state,
+			'fileHandler'=> $fileHandler,
+			'dbHandler'=> $dbHandler
+		);
 	}
 }

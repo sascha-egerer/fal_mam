@@ -139,7 +139,8 @@ class DbHandler {
 
 		$data['tx_falmam_event_queue'][$event['uid']] = array(
 			'status' => 'DONE',
-			'runtime' => $event['runtime']
+			'runtime' => $event['runtime'],
+			'skipuntil' => NULL
 		);
 
 		$this->dataHandler->start($data, array());
@@ -199,7 +200,6 @@ class DbHandler {
 				$data[$mapping['fal_field']] = $value;
 			}
 		}
-		var_dump($data);
 		return $data;
 	}
 }

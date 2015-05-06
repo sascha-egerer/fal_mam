@@ -182,7 +182,7 @@ class EventQueueHandler extends AbstractTask {
 		}
 
 		if ($event['target'] == 'file' || $event['target'] == 'both') {
-			// file gets deleted by the ResourceStorage together with the Asset Data
+			$this->dbHandler->deleteAsset($event['object_id']);
 		}
 
 		return TRUE;
@@ -212,7 +212,7 @@ class EventQueueHandler extends AbstractTask {
 		}
 
 		if ($event['target'] == 'metadata' || $event['target'] == 'both') {
-			if (FALSE == file_exists($bean['properties']['data_shellpath'] . $bean['properties']['data_name'])) {
+			if (FALSE == $this->fileHandler->fileExists($bean['properties']['data_shellpath'] . $bean['properties']['data_name'])) {
 				unset($bean, $beans);
 				return FALSE;
 			}
@@ -239,11 +239,15 @@ class EventQueueHandler extends AbstractTask {
 		$bean = current($beans);
 
 		if ($event['target'] == 'file' || $event['target'] == 'both') {
+			$this->fileHandler->moveFile(
+				$event['object_id'],
+				$bean['properties']['data_name'],
+				$bean['properties']['data_shellpath']
+			);
 			$this->client->saveDerivate(
 				$bean['properties']['data_shellpath'] . $bean['properties']['data_name'],
 				$event['object_id']
 			);
-			// todo: remove old file!!
 		}
 
 		if ($event['target'] == 'metadata' || $event['target'] == 'both') {

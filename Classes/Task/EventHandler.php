@@ -82,7 +82,7 @@ class EventHandler extends AbstractTask {
 		);
 
 		while (count($events = $this->client->getEvents($this->state->getEventId() + 1)) > 0) {
-			// $start = microtime(TRUE);
+			$start = microtime(TRUE);
 			$data = array();
 			foreach ($events as $key => $event) {
 				$data['tx_falmam_event_queue']['NEW' . $event['id']] = array(
@@ -96,7 +96,7 @@ class EventHandler extends AbstractTask {
 			}
 
 			$this->saveEvents($data);
-			// echo count($events) . ': ' . (microtime(TRUE) - $start) . chr(10);
+			echo count($events) . ': ' . (microtime(TRUE) - $start) . chr(10);
 
 			$this->state->setEventId($event['id']);
 			$this->state->save();
