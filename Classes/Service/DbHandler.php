@@ -115,7 +115,8 @@ class DbHandler {
 			'(status = "NEW" AND skipuntil < ' . time() . ') OR (status = "CLAIMED" AND tstamp < ' . (time() - $reclaimTime) . ')',
 			'',
 			'event_id',
-			'1'
+			'5',
+			'object_id'
 		);
 		if (count($rows) > 0) {
 			$event = current($rows);
