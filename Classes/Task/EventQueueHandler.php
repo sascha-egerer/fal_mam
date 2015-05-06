@@ -39,6 +39,11 @@ class EventQueueHandler extends AbstractTask {
 	protected $resourceStorage;
 
 	/**
+	 * @var \TYPO3\CMS\Core\Resource\ResourceFactory
+	 */
+	protected $resourceFactory;
+
+	/**
 	 * @var string
 	 */
 	protected $items = 10;
@@ -88,6 +93,14 @@ class EventQueueHandler extends AbstractTask {
 		$this->resourceStorage = $resourceStorage;
 	}
 
+	/**
+	 * @param \TYPO3\CMS\Core\Resource\ResourceFactory $resourceFactory
+	 * @return void
+	 */
+	public function injectResourceFactory(\TYPO3\CMS\Core\Resource\ResourceFactory $resourceFactory) {
+		$this->resourceFactory = $resourceFactory;
+	}
+
 	public function execute() {
 		$this->initialize();
 
@@ -135,6 +148,9 @@ class EventQueueHandler extends AbstractTask {
 		if ($this->resourceStorage === NULL) {
 			$storageRepository = $objectManager->get('\TYPO3\CMS\Core\Resource\StorageRepository');
 			$this->resourceStorage =  current($storageRepository->findByStorageType('MAM'));
+		}
+		if ($this->resourceFactory === NULL) {
+			$this->resourceFactory = $this->injectResourceFactory(ResourceFactory::getInstance());
 		}
 	}
 
@@ -282,7 +298,7 @@ class EventQueueHandler extends AbstractTask {
 	public function createAsset($filename, $filepath, $mamId, $metadata) {
 		$path = str_replace($this->configuration->base_path, '', $filepath . $filename);
 
-		$fileObject = ResourceFactory::getInstance()->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $path);
+		$fileObject = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $path);
 		$fileObject->_getMetaData();
 
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file', 'uid = ' . $fileObject->getUid(), array(
@@ -319,7 +335,6 @@ class EventQueueHandler extends AbstractTask {
 		$fileObject = $this->getFileObject($mamId);
 
 		if ($fileObject === NULL) {
-			var_dump($metadata);
 			// false update event -> create!
 			return $this->createAsset($filename, $filepath, $mamId, $metadata);
 		}
@@ -328,7 +343,6 @@ class EventQueueHandler extends AbstractTask {
 
 		$oldFilePath = rtrim($this->configuration->base_path, '/') . $fileObject->getIdentifier();
 		$newFilePath = $filepath . $filename;
-		var_dump($oldFilePath, $newFilePath);
 
 		if ($oldFilePath !== $newFilePath) {
 			$this->moveFile($mamId, $filepath, $filename);
@@ -489,7 +503,7 @@ class EventQueueHandler extends AbstractTask {
 			return NULL;
 		}
 
-		return ResourceFactory::getInstance()->getFileObject($row['uid'], $row);
+		return $this->resourceFactory->getFileObject($row['uid'], $row);
 
 	}
 
@@ -545,11 +559,15 @@ class EventQueueHandler extends AbstractTask {
 			$newFilePath = $filepath . $filename;
 			$storagePath = str_replace($this->configuration->base_path, '', $filepath);
 
+			if (!$this->fileExists($oldFilePath)) {
+				return;
+			}
+
 			if ($oldFilePath !== $newFilePath) {
 				if (!is_dir($filepath)) {
 					mkdir($filepath, 0777, TRUE);
 				}
-				$folder = ResourceFactory::getInstance()->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $storagePath);
+				$folder = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $storagePath);
 				$this->resourceStorage->moveFile($fileObject, $folder, $filename);
 			}
 		}

@@ -16,6 +16,46 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 	protected $testExtensionsToLoad = array('typo3conf/ext/fal_mam');
 
+	protected $testStoragePath;
+
+	/**
+	 * Set up creates a test instance and database.
+	 *
+	 * This method should be called with parent::setUp() in your test cases!
+	 *
+	 * @return void
+	 */
+	public function setUp() {
+		parent::setUp();
+
+		$this->testStoragePath = ORIGINAL_ROOT . 'fileadmin/';
+		$tmpfile = tempnam($this->testStoragePath, 'functional-test-');
+		unlink($tmpfile);
+		$this->testStoragePath = $tmpfile . '/';
+		mkdir($this->testStoragePath, 0777, TRUE);
+
+	}
+
+	/**
+	 * @return void
+	 */
+	public function tearDown() {
+		$this->removeDirectory($this->testStoragePath);
+	}
+
+	public function removeDirectory($path) {
+		$files = array_diff(scandir($path), array('.', '..'));
+		foreach ($files as $file) {
+			$subPath = $path . '/' . $file;
+			if (is_dir($subPath)) {
+				$this->removeDirectory($subPath);
+			} else {
+				unlink($subPath);
+			}
+		}
+		return rmdir($path);
+	}
+
 	/**
 	 * If the processing of an event fails it needs to be rescheduled.
 	 *
@@ -23,12 +63,10 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function failedEventsShouldBeRescheduled() {
-		$dbHandler = $this->getMock('\Crossmedia\FalMam\Service\DbHandler');
-		$eventQueueHandler = $this->getMock('\Crossmedia\FalMam\Task\EventQueueHandler', array('processEvent'));
-		$eventQueueHandler->injectDbHandler($dbHandler);
+		$eventQueueHandler = $this->getMock('\Crossmedia\FalMam\Task\EventQueueHandler', array('processEvent', 'claimEventFromQueue', 'rescheduleEvent', 'finnishEvent'));
 
 		// $state->expects($this->once())->method('getConfigHash')->will($this->returnValue('foo'));
-		$dbHandler->expects($this->exactly(2))
+		$eventQueueHandler->expects($this->exactly(2))
 			->method('claimEventFromQueue')
 			->will($this->onConsecutiveCalls(
 				array(
@@ -43,8 +81,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 			->method('processEvent')
 			->will($this->returnValue(FALSE));
 
-		$dbHandler->expects($this->once())->method('rescheduleEvent');
-		$dbHandler->expects($this->never())->method('finnishEvent');
+		$eventQueueHandler->expects($this->once())->method('rescheduleEvent');
+		$eventQueueHandler->expects($this->never())->method('finnishEvent');
 
 		$eventQueueHandler->execute();
 	}
@@ -56,12 +94,10 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function successfullEventsShouldBeFinnished() {
-		$dbHandler = $this->getMock('\Crossmedia\FalMam\Service\DbHandler');
-		$eventQueueHandler = $this->getMock('\Crossmedia\FalMam\Task\EventQueueHandler', array('processEvent'));
-		$eventQueueHandler->injectDbHandler($dbHandler);
+		$eventQueueHandler = $this->getMock('\Crossmedia\FalMam\Task\EventQueueHandler', array('processEvent', 'claimEventFromQueue', 'rescheduleEvent', 'finnishEvent'));
 
 		// $state->expects($this->once())->method('getConfigHash')->will($this->returnValue('foo'));
-		$dbHandler->expects($this->exactly(2))
+		$eventQueueHandler->expects($this->exactly(2))
 			->method('claimEventFromQueue')
 			->will($this->onConsecutiveCalls(
 				array(
@@ -76,8 +112,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 			->method('processEvent')
 			->will($this->returnValue(TRUE));
 
-		$dbHandler->expects($this->once())->method('finnishEvent');
-		$dbHandler->expects($this->never())->method('rescheduleEvent');
+		$eventQueueHandler->expects($this->once())->method('finnishEvent');
+		$eventQueueHandler->expects($this->never())->method('rescheduleEvent');
 
 		$eventQueueHandler->execute();
 	}
@@ -88,10 +124,10 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function createMetadataEventShouldFailIfNoFileIsFound() {
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('fileExists')));
 
-		// $dbHandler->expects($this->once())->method('createAsset');
-		$fileHandler->expects($this->once())->method('fileExists')->will($this->returnValue(FALSE));
+		// $eventQueueHandler->expects($this->once())->method('createAsset');
+		$eventQueueHandler->expects($this->once())->method('fileExists')->will($this->returnValue(FALSE));
 
 		$result = $eventQueueHandler->processEvent(array(
 			'object_id' => 'foo',
@@ -128,10 +164,10 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function createMetadataEventShouldCreateTheAssetIfTheFileExists() {
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('fileExists')));
 
-		$dbHandler->expects($this->once())->method('createAsset');
-		$fileHandler->expects($this->once())->method('fileExists')->will($this->returnValue(TRUE));
+		$eventQueueHandler->expects($this->once())->method('createAsset');
+		$eventQueueHandler->expects($this->once())->method('fileExists')->will($this->returnValue(TRUE));
 
 		$eventQueueHandler->processEvent(array(
 			'object_id' => '1234',
@@ -146,10 +182,10 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function createBothEventShouldCreateTheAssetAndFile() {
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('fileExists')));
 
-		$dbHandler->expects($this->once())->method('createAsset');
-		$fileHandler->expects($this->once())->method('fileExists')->will($this->returnValue(TRUE));
+		$eventQueueHandler->expects($this->once())->method('createAsset');
+		$eventQueueHandler->expects($this->once())->method('fileExists')->will($this->returnValue(TRUE));
 		$client->expects($this->once())->method('saveDerivate')->with(
 			'/filepath/foo.png',
 			'1234'
@@ -168,9 +204,9 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function deleteMetadataEventShouldDeleteAssetAndField() {
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('deleteAsset')));
 
-		$dbHandler->expects($this->once())->method('deleteAsset');
+		$eventQueueHandler->expects($this->once())->method('deleteAsset');
 
 		$eventQueueHandler->processEvent(array(
 			'object_id' => '1234',
@@ -185,9 +221,9 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function deleteFileEventShouldDeleteAssetAndField() {
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('deleteAsset')));
 
-		$dbHandler->expects($this->once())->method('deleteAsset');
+		$eventQueueHandler->expects($this->once())->method('deleteAsset');
 
 		$eventQueueHandler->processEvent(array(
 			'object_id' => '1234',
@@ -202,9 +238,9 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function updateMetadata() {
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('updateAsset')));
 
-		$dbHandler->expects($this->once())->method('updateAsset');
+		$eventQueueHandler->expects($this->once())->method('updateAsset');
 
 		$eventQueueHandler->processEvent(array(
 			'object_id' => '1234',
@@ -239,9 +275,9 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function updateFilePath() {
-		extract($this->getEventQueueHandler(NULL, '/new-filepath/'));
+		extract($this->getEventQueueHandler(array('moveFile'), '/new-filepath/'));
 
-		$fileHandler->expects($this->once())->method('moveFile')->with(
+		$eventQueueHandler->expects($this->once())->method('moveFile')->with(
 			'1234',
 			'foo.png',
 			'/new-filepath/'
@@ -277,21 +313,36 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 					)
 		)));
 
+		$resourceStorage = $this->getMock('\TYPO3\CMS\Core\Resource\ResourceStorage', array('moveFile', 'getUid'), array(
+			$this->getMock('\TYPO3\CMS\Core\Resource\Driver\DriverInterface'),
+			array()
+		));
+		$eventQueueHandler->injectResourceStorage($resourceStorage);
+		$resourceStorage->expects($this->any())->method('getUid')->will($this->returnValue(1));
+
+		$file = $this->getMock('\TYPO3\CMS\Core\Resource\File', array(), array(array(), $resourceStorage));
+
+		$resourceFactory = $this->getMock('\TYPO3\CMS\Core\Resource\ResourceFactory', array('getObjectFromCombinedIdentifier', 'getFileObject'));
+		$eventQueueHandler->injectResourceFactory($resourceFactory);
+		$resourceFactory->expects($this->any())
+					->method('getObjectFromCombinedIdentifier')
+					->will($this->returnValue($file));
+		$resourceFactory->expects($this->any())
+					->method('getFileObject')
+					->will($this->returnValue($file));
+
 		$state = $this->getMock('\Crossmedia\FalMam\Task\EventHandlerState');
 		$eventQueueHandler->injectState($state);
 
-		$fileHandler = $this->getMock('\Crossmedia\FalMam\Service\FileHandler');
-		$eventQueueHandler->injectFileHandler($fileHandler);
-
-		$dbHandler = $this->getMock('\Crossmedia\FalMam\Service\DbHandler');
-		$eventQueueHandler->injectDbHandler($dbHandler);
+		$configuration = $this->getMock('\Crossmedia\FalMam\Service\Configuration');
+		$eventQueueHandler->injectConfiguration($configuration);
 
 		return array(
 			'eventQueueHandler' => $eventQueueHandler,
 			'client'=> $client,
 			'state'=> $state,
-			'fileHandler'=> $fileHandler,
-			'dbHandler'=> $dbHandler
+			'resourceFactory' => $resourceFactory,
+			'file' => $file
 		);
 	}
 }

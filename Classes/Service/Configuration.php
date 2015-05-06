@@ -53,7 +53,7 @@ class Configuration implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * @var array
 	 */
-	public $mapping;
+	public $mapping = array();
 
 	public function __construct() {
 		if(isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
