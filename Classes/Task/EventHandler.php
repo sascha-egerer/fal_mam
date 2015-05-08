@@ -96,7 +96,7 @@ class EventHandler extends AbstractTask {
 			}
 
 			$this->saveEvents($data);
-			echo count($events) . ': ' . (microtime(TRUE) - $start) . chr(10);
+			// echo count($events) . ': ' . (microtime(TRUE) - $start) . chr(10);
 
 			$this->state->setEventId($event['id']);
 			$this->state->save();

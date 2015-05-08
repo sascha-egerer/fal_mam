@@ -149,8 +149,9 @@ class EventQueueHandler extends AbstractTask {
 			$storageRepository = $objectManager->get('\TYPO3\CMS\Core\Resource\StorageRepository');
 			$this->resourceStorage =  current($storageRepository->findByStorageType('MAM'));
 		}
+
 		if ($this->resourceFactory === NULL) {
-			$this->resourceFactory = $this->injectResourceFactory(ResourceFactory::getInstance());
+			$this->injectResourceFactory(ResourceFactory::getInstance());
 		}
 	}
 
@@ -207,6 +208,8 @@ class EventQueueHandler extends AbstractTask {
 		$beans = $this->client->getBeans($event['object_id']);
 		$bean = current($beans);
 
+		$result = TRUE;
+
 		if ($bean['type'] == 'folder') {
 			$this->createFolder($bean['properties']['data_shellpath']);
 			unset($bean, $beans);
@@ -221,12 +224,7 @@ class EventQueueHandler extends AbstractTask {
 		}
 
 		if ($event['target'] == 'metadata' || $event['target'] == 'both') {
-			if (FALSE == $this->fileExists($bean['properties']['data_shellpath'] . $bean['properties']['data_name'])) {
-				unset($bean, $beans);
-				return FALSE;
-			}
-
-			$this->createAsset(
+			$result = $this->createAsset(
 				$bean['properties']['data_name'],
 				$bean['properties']['data_shellpath'],
 				$event['object_id'],
@@ -234,7 +232,7 @@ class EventQueueHandler extends AbstractTask {
 			);
 		}
 		unset($bean, $beans);
-		return TRUE;
+		return $result;
 	}
 
 	/**
@@ -247,11 +245,13 @@ class EventQueueHandler extends AbstractTask {
 		$beans = $this->client->getBeans($event['object_id']);
 		$bean = current($beans);
 
+		$result = TRUE;
+
 		if ($event['target'] == 'file' || $event['target'] == 'both') {
 			$this->moveFile(
 				$event['object_id'],
-				$bean['properties']['data_name'],
-				$bean['properties']['data_shellpath']
+				$bean['properties']['data_shellpath'],
+				$bean['properties']['data_name']
 			);
 			$this->client->saveDerivate(
 				$bean['properties']['data_shellpath'] . $bean['properties']['data_name'],
@@ -260,11 +260,7 @@ class EventQueueHandler extends AbstractTask {
 		}
 
 		if ($event['target'] == 'metadata' || $event['target'] == 'both') {
-			// if (FALSE == $this->fileExists($bean['properties']['data_shellpath'] . $bean['properties']['data_name'])) {
-			// 	unset($bean, $beans);
-			// 	return FALSE;
-			// }
-			$this->updateAsset(
+			$result = $this->updateAsset(
 				$bean['properties']['data_name'],
 				$bean['properties']['data_shellpath'],
 				$event['object_id'],
@@ -272,7 +268,7 @@ class EventQueueHandler extends AbstractTask {
 			);
 		}
 		unset($bean, $beans);
-		return TRUE;
+		return $result;
 	}
 
 	/**
@@ -297,6 +293,10 @@ class EventQueueHandler extends AbstractTask {
 	 */
 	public function createAsset($filename, $filepath, $mamId, $metadata) {
 		$path = str_replace($this->configuration->base_path, '', $filepath . $filename);
+
+		if (FALSE == $this->fileExists($filepath . $filename)) {
+			return FALSE;
+		}
 
 		$fileObject = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $path);
 		$fileObject->_getMetaData();
@@ -410,12 +410,15 @@ class EventQueueHandler extends AbstractTask {
 		if (count($rows) > 0) {
 			$event = current($rows);
 			unset($rows);
-			$data['tx_falmam_event_queue'][$event['uid']] = array(
-				'status' => 'CLAIMED'
-			);
 
-			$this->dataHandler->start($data, array());
-			$this->dataHandler->process_datamap();
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery(
+				'tx_falmam_event_queue',
+				'uid=' . $event['uid'],
+				array(
+					'tstamp' => time(),
+					'status' => 'CLAIMED'
+				)
+			);
 
 			$event['start'] = microtime(TRUE);
 			return $event;
@@ -434,14 +437,15 @@ class EventQueueHandler extends AbstractTask {
 			$event['runtime'] = number_format((microtime(TRUE) - $event['start']) * 1000, 2);
 		}
 
-		$data['tx_falmam_event_queue'][$event['uid']] = array(
-			'status' => 'DONE',
-			'runtime' => $event['runtime'],
-			'skipuntil' => NULL
+		$GLOBALS['TYPO3_DB']->exec_UPDATEquery(
+			'tx_falmam_event_queue',
+			'uid=' . $event['uid'],
+			array(
+				'status' => 'DONE',
+				'runtime' => $event['runtime'],
+				'skipuntil' => NULL
+			)
 		);
-
-		$this->dataHandler->start($data, array());
-		$this->dataHandler->process_datamap();
 	}
 
 	/**
@@ -453,13 +457,15 @@ class EventQueueHandler extends AbstractTask {
 	 * @return void
 	 */
 	public function rescheduleEvent($event) {
-		$data['tx_falmam_event_queue'][$event['uid']] = array(
-			'status' => 'NEW',
-			'skipuntil' => time() + 1
+		$GLOBALS['TYPO3_DB']->exec_UPDATEquery(
+			'tx_falmam_event_queue',
+			'uid=' . $event['uid'],
+			array(
+				'tstamp' => time(),
+				'status' => 'NEW',
+				'skipuntil' => time() + 1
+			)
 		);
-
-		$this->dataHandler->start($data, array());
-		$this->dataHandler->process_datamap();
 	}
 
 	/**
