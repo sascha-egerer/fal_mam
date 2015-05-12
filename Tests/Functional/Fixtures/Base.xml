@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dataset>
+    <pages>
+        <uid>1</uid>
+        <pid>0</pid>
+        <title>Root</title>
+        <deleted>0</deleted>
+        <perms_everybody>15</perms_everybody>
+    </pages>
+    <pages>
+        <uid>2</uid>
+        <pid>1</pid>
+        <title>Dummy 1-2</title>
+        <deleted>0</deleted>
+        <perms_everybody>15</perms_everybody>
+    </pages>
+    <sys_file_storage>
+        <uid>1</uid>
+        <pid>0</pid>
+        <name>Default</name>
+        <deleted>0</deleted>
+        <driver>MAM</driver>
+        <is_default>1</is_default>
+        <is_browsable>1</is_browsable>
+        <is_public>1</is_public>
+        <is_writable>1</is_writable>
+        <is_online>1</is_online>
+    </sys_file_storage>
+    <tx_falmam_state>
+        <uid>1</uid>
+        <pid>0</pid>
+        <config_hash>asud09ajs0d9ia90sdj</config_hash>
+        <event_id>0</event_id>
+    </tx_falmam_state>
+</dataset>

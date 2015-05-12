@@ -110,6 +110,7 @@ class EventQueueHandler extends AbstractTask {
 		$start = time();
 		while ($counter < $this->items) {
 			$event = $this->claimEventFromQueue();
+
 			if ($event === NULL) {
 				// nothing left to do
 				return TRUE;
@@ -320,6 +321,8 @@ class EventQueueHandler extends AbstractTask {
 		}
 
 		unset($fileObject, $path, $data);
+
+		return TRUE;
 	}
 
 	/**
@@ -341,8 +344,8 @@ class EventQueueHandler extends AbstractTask {
 
 		$path = str_replace($this->configuration->base_path, '', $filepath . $filename);
 
-		$oldFilePath = rtrim($this->configuration->base_path, '/') . $fileObject->getIdentifier();
-		$newFilePath = $filepath . $filename;
+		$oldFilePath = realpath($this->configuration->base_path . $fileObject->getIdentifier());
+		$newFilePath = realpath($filepath . $filename);
 
 		if ($oldFilePath !== $newFilePath) {
 			$this->moveFile($mamId, $filepath, $filename);
@@ -363,6 +366,8 @@ class EventQueueHandler extends AbstractTask {
 		}
 
 		unset($fileObject, $path, $data);
+
+		return TRUE;
 	}
 
 	/**
@@ -375,6 +380,7 @@ class EventQueueHandler extends AbstractTask {
 	 */
 	public function deleteAsset($mamId) {
 		$fileObject = $this->getFileObject($mamId);
+
 		if ($fileObject === NULL) {
 			return;
 		}
@@ -575,7 +581,23 @@ class EventQueueHandler extends AbstractTask {
 				}
 				$folder = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $storagePath);
 				$this->resourceStorage->moveFile($fileObject, $folder, $filename);
+
+				$this->cleanupEmptyFoldersInRootline(dirname($oldFilePath));
 			}
+		}
+	}
+
+	public function cleanupEmptyFoldersInRootline($path) {
+		$absolutePath = realpath($path);
+		if (substr($path, 0, 1) === '/' || strlen($path) < 1) {
+			// something fishy! abort!
+			return;
+		}
+		$files = array_diff(scandir($absolutePath), array('.', '..'));
+
+		if (count($files) === 0) {
+			rmdir($absolutePath);
+			$this->cleanupEmptyFoldersInRootline(dirname($path));
 		}
 	}
 

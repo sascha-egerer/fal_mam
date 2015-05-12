@@ -3,7 +3,10 @@
 <f:section name="docheader-buttons">
 	<f:be.buttons.icon uri="javascript:document.configurationform.submit();" icon="actions-document-save" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:save')}" />
 
-	<strong>saving the configuration will start a full synchronisation of all assets.</strong>
+	<f:link.action action="sync" style="float: right; color: #660000; font-weight: bold; ">
+		<f:be.buttons.icon icon="actions-system-refresh" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:save')}" />
+		Start a full synchronisation (can take quite a while!)
+	</f:link.action>
 </f:section>
 
 <f:section name="module-headline">

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dataset>
+    <tx_falmam_event_queue>
+        <uid>1</uid>
+        <pid>0</pid>
+        <status>NEW</status>
+        <event_id>1</event_id>
+        <object_id>1234</object_id>
+        <event_type>create</event_type>
+        <target>file</target>
+    </tx_falmam_event_queue>
+</dataset>

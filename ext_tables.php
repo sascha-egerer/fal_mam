@@ -77,7 +77,7 @@ if (TYPO3_MODE === 'BE') {
         'mam_dashboard', // Submodule key
         '',                     // Position
         array(
-            'Dashboard' => 'index,configuration',
+            'Dashboard' => 'index,configuration,sync',
         ),
         array(
             'access' => 'user,group',

@@ -51,6 +51,11 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected $configHash;
 
+	/**
+	 * @var string
+	 */
+	protected $defaultDerivate;
+
 	public function __construct($autologin = TRUE) {
 		if ($autologin === TRUE) {
 			$this->initialize();
@@ -76,6 +81,7 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 
 			$connectorConfig = $this->getConnectorConfig();
 			$this->configHash = $connectorConfig['config_hash'];
+			$this->defaultDerivate = current($connectorConfig['derivates']);
 		}
 	}
 
@@ -318,7 +324,10 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $objectId id of the object to get a derivate for
 	 * @return ???
 	 */
-	public function getDerivate($objectId, $usage = 'Original') {
+	public function getDerivate($objectId, $usage = NULL) {
+		if ($usage === NULL) {
+			$usage = $this->defaultDerivate;
+		}
 		$query = array(
 			'session' => $this->sessionId,
 			'apptype' => 'MAM',
@@ -330,7 +339,10 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		return $this->doGetRequest($uri);
 	}
 
-	public function saveDerivate($filename, $objectId, $usage = 'Original') {
+	public function saveDerivate($filename, $objectId, $usage = NULL) {
+		if ($usage === NULL) {
+			$usage = $this->defaultDerivate;
+		}
 		$query = array(
 			'session' => $this->sessionId,
 			'apptype' => 'MAM',
@@ -359,7 +371,7 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		$result = json_decode($response, TRUE);
 		if (!isset($result['code']) || $result['code'] !== 0) {
 			var_dump($result, $uri, $this->sessionId);
-			$message = isset($result['message']) ? $result['message'] : 'MamClient: unkown error';
+			$message = isset($result['message']) ? $result['message'] : 'MamClient: could not communicate with mam api. please try again later';
 			throw new MamApiException($message);
 		}
 		return $result['result'];
@@ -374,7 +386,7 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 			foreach ($input as $key => $value) {
 				$input[$key] = $this->normalizeArray($value);
 			}
-			if (count($input) == 1 && isset($input['value'])) {
+			if (count($input) == 1 && array_key_exists('value', $input)) {
 				$input = $input['value'];
 			}
 			if (is_array($input) && count($input) == 0) {
