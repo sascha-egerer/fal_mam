@@ -88,4 +88,5 @@ CREATE TABLE tx_falmam_mapping (
 #
 CREATE TABLE sys_file (
     tx_falmam_id tinytext
+    tx_falmam_derivate_suffix tinytext
 );

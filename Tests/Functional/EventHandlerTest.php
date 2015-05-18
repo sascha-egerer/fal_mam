@@ -1,5 +1,5 @@
 <?php
-namespace Crossmedia\FalMam\Tests\Unit\Functional\Repository;
+namespace Crossmedia\FalMam\Tests\Unit\Functional;
 
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;

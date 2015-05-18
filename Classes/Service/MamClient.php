@@ -352,17 +352,42 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		);
 		$uri = $this->dataUrl . '?' . http_build_query($query);
 
+		$temporaryFilename = tempnam(sys_get_temp_dir(), 'fal_mam-' . $objectId);
+
 		ob_start();
-		mkdir(dirname($filename), 0777, TRUE);
-		$fp = fopen ($filename, 'w+');
+		mkdir(dirname($temporaryFilename), 0777, TRUE);
+
+		$fp = fopen($temporaryFilename, 'w+');
 		$ch = curl_init($uri);
+		$headerBuff = fopen('/tmp/headers', 'w+');
+
 		curl_setopt($ch, CURLOPT_TIMEOUT, 500);
 		curl_setopt($ch, CURLOPT_FILE, $fp);
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_WRITEHEADER, $headerBuff);
 		curl_exec($ch);
+
+		rewind($headerBuff);
+		$headers = stream_get_contents($headerBuff);
+		$derivateSuffix = '';
+		if(preg_match('/Content-Disposition: .*filename="([^ \n"]+)"/', $headers, $matches)) {
+			$derivateFilename = trim($matches[1]);
+			$derivateSuffix = strtolower(pathinfo($derivateFilename, PATHINFO_EXTENSION));
+		}
+
 		curl_close($ch);
 		fclose($fp);
 		$output = ob_get_clean();
+
+		if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== $derivateSuffix)	{
+			$filename = $filename . '.' . $derivateSuffix;
+		}
+		if (!file_exists(dirname($filename))) {
+			mkdir(dirname($filename), 0777, TRUE);
+		}
+		rename($temporaryFilename, $filename);
+
+		return $derivateSuffix;
 	}
 
 	public function getRequest($method, $parameter) {

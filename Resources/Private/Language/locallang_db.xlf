@@ -33,6 +33,7 @@
             <label index="tx_falmam_mapping.fal_field">FAL Field</label>
             <label index="tx_falmam_mapping.value_map">Value Mapping</label>
             <label index="sys_file.tx_falmam_id">MAM ID</label>
+            <label index="sys_file.tx_falmam_derivate_suffix">Derivate Suffix</label>
         </languageKey>
     </data>
 </T3locallang>

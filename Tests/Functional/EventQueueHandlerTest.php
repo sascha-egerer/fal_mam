@@ -1,5 +1,5 @@
 <?php
-namespace Crossmedia\FalMam\Tests\Unit\Functional\Repository;
+namespace Crossmedia\FalMam\Tests\Unit\Functional;
 
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -30,11 +30,14 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		parent::setUp();
 		chdir(PATH_site);
 
+
 		$this->testStoragePath = 'fileadmin/__functional-test/';
-		if (!file_exists(PATH_site . $this->testStoragePath)) {
-			mkdir(PATH_site . $this->testStoragePath, 0777, TRUE);
-			sleep(1);
+		if (file_exists(PATH_site . $this->testStoragePath)) {
+			$this->removeDirectory(PATH_site . $this->testStoragePath);
 		}
+
+		mkdir(PATH_site . $this->testStoragePath, 0777, TRUE);
+		sleep(1);
 
 		$this->importDataSet('Base.xml');
 
@@ -71,10 +74,6 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->initializeLanguageObject();
 	}
 
-	public function tearDown() {
-		$this->removeDirectory($this->testStoragePath);
-	}
-
 	public function removeDirectory($path) {
 		$files = array_diff(scandir($path), array('.', '..'));
 		foreach ($files as $file) {
@@ -92,7 +91,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		parent::importDataSet(ORIGINAL_ROOT . 'typo3conf/ext/fal_mam/Tests/Functional/Fixtures/' . $path);
 	}
 
-	public function mockFile($filepath = 'filepath/foo.png') {
+	public function mockFile($filepath = 'filepath/foo.png', $derivateSuffix = '') {
 		$absoluteFilepath = $this->testStoragePath . $filepath;
 		if (!file_exists(dirname(PATH_site . $absoluteFilepath))) {
 			mkdir(dirname(PATH_site . $absoluteFilepath), 0777, TRUE);
@@ -115,7 +114,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 			'sys_file',
 			'uid=1',
 			array(
-				'tx_falmam_id' => '1234'
+				'tx_falmam_id' => '1234',
+				'tx_falmam_derivate_suffix' => $derivateSuffix
 			)
 		);
 	}
@@ -189,7 +189,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function successfullEventsShouldBeFinnished() {
 		$this->importDataSet('CreateMetadataEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
 
 		$client->expects($this->any())
@@ -218,7 +218,6 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function createMetadataEventShouldFailIfNoFileIsFound() {
 		$this->importDataSet('CreateMetadataEvent.xml');
 		extract($this->getEventQueueHandler());
-		$this->mockFile('filepath/foo.png');
 
 		$client->expects($this->any())
 				->method('getBeans')
@@ -246,7 +245,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function createFileEventShouldCreateTheFile() {
 		$this->importDataSet('CreateFileEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 
 		$client->expects($this->any())
 				->method('getBeans')
@@ -261,6 +260,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 					)
 		)));
 
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('fileCreated'));
+
 		$client->expects($this->once())->method('saveDerivate');
 		$eventQueueHandler->execute();
 	}
@@ -272,7 +273,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function createMetadataEventShouldCreateTheAssetIfTheFileExists() {
 		$this->importDataSet('CreateMetadataEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
 
 		$client->expects($this->any())
@@ -287,6 +288,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 						)
 					)
 		)));
+
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
 
 		$eventQueueHandler->execute();
 
@@ -304,7 +307,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function createBothEventShouldCreateTheAssetAndFile() {
 		$this->importDataSet('CreateBothEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
 
 		$client->expects($this->any())
@@ -337,8 +340,10 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function deleteMetadataEventShouldDeleteAssetAndFile() {
 		$this->importDataSet('DeleteMetadataEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
+
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetDeleted'));
 
 		$eventQueueHandler->execute();
 
@@ -346,7 +351,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 		$file = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file', 'uid=1');
 		$this->assertFalse($file, 'There should\'nt be a sys_file with uid 1 anymore ');
-		$this->assertFalse(file_exists($this->testFile), 'File should not exist anymore!');
+		$this->assertFalse(file_exists($this->testStoragePath . '/filepath/foo.png'), 'File should not exist anymore!');
 	}
 
 	/**
@@ -356,8 +361,10 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function deleteFileEventShouldDeleteAssetAndField() {
 		$this->importDataSet('DeleteFileEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
+
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetDeleted'));
 
 		$eventQueueHandler->execute();
 
@@ -365,7 +372,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 		$file = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file', 'uid=1');
 		$this->assertFalse($file, 'There should\'nt be a sys_file with uid 1 anymore ');
-		$this->assertFalse(file_exists($this->testFile), 'File should not exist anymore!');
+		$this->assertFalse(file_exists($this->testStoragePath . '/filepath/foo.png'), 'File should not exist anymore!');
 	}
 
 	/**
@@ -375,7 +382,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function deleteBothEventShouldDeleteAssetAndField() {
 		$this->importDataSet('DeleteBothEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
 
 		$eventQueueHandler->execute();
@@ -384,7 +391,27 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 		$file = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file', 'uid=1');
 		$this->assertFalse($file, 'There should\'nt be a sys_file with uid 1 anymore ');
-		$this->assertFalse(file_exists($this->testFile), 'File should not exist anymore!');
+		$this->assertFalse(file_exists($this->testStoragePath . '/filepath/foo.png'), 'File should not exist anymore!');
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function deleteMetadataShouldDeleteAssetEvenIfFileIsAlreadyMissing() {
+		$this->importDataSet('DeleteMetadataEvent.xml');
+		extract($this->getEventQueueHandler(array('callHook')));
+		$this->mockFile('filepath/foo.png');
+		unlink($this->testStoragePath . '/filepath/foo.png');
+
+		$eventQueueHandler->execute();
+
+		$this->assetEventStatus('DONE', 1);
+
+		$file = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file', 'uid=1');
+		$this->assertFalse($file, 'There should\'nt be a sys_file with uid 1 anymore ');
+		$this->assertFalse(file_exists($this->testStoragePath . '/filepath/foo.png'), 'File should not exist anymore!');
 	}
 
 	/**
@@ -394,7 +421,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function updateMetadata() {
 		$this->importDataSet('UpdateMetadataEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
 
 		$client->expects($this->any())
@@ -409,6 +436,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 						)
 					)
 		)));
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+
 		$eventQueueHandler->execute();
 
 		$this->assetEventStatus('DONE', 1);
@@ -425,7 +454,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function updateFileContents() {
 		$this->importDataSet('UpdateFileEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
 
 		$client->expects($this->any())
@@ -440,6 +469,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 						)
 					)
 		)));
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('fileUpdated'));
 
 		$client->expects($this->once())->method('saveDerivate');
 		$eventQueueHandler->execute();
@@ -452,7 +482,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function updateFilePath() {
 		$this->importDataSet('UpdateMetadataEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/foo.png');
 
 		$client->expects($this->any())
@@ -467,6 +497,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 						)
 					)
 		)));
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+
 		$eventQueueHandler->execute();
 
 		$this->assetEventStatus('DONE', 1);
@@ -486,7 +518,7 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function emptyFoldersAreRemoved() {
 		$this->importDataSet('UpdateMetadataEvent.xml');
-		extract($this->getEventQueueHandler());
+		extract($this->getEventQueueHandler(array('callHook')));
 		$this->mockFile('filepath/subpath/foo.png');
 
 		$client->expects($this->any())
@@ -514,5 +546,67 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 		$this->assertFalse(is_dir($this->testStoragePath . '/filepath/subpath'), 'empty folder was not deleted');
 		$this->assertFalse(is_dir($this->testStoragePath . '/filepath'), 'empty folder was not deleted');
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function derivateExtensionIsSaved() {
+		$this->importDataSet('CreateFileEvent.xml');
+		extract($this->getEventQueueHandler(array('callHook')));
+		$this->mockFile('filepath/foo.png.jpg');
+
+		$client->expects($this->any())
+				->method('getBeans')
+				->will($this->returnValue(array(
+					array(
+						'id' => '1234',
+						'type' => 'file',
+						'properties' => array(
+							'data_name' => 'foo.png',
+							'data_shellpath' => $this->testStoragePath . '/filepath/'
+						)
+					)
+		)));
+
+		$client->expects($this->once())->method('saveDerivate')->will($this->returnValue('jpg'));
+		$eventQueueHandler->execute();
+
+		$file = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file', 'uid=1');
+		$this->assertEquals('/filepath/foo.png.jpg', $file['identifier']);
+		$this->assertEquals('jpg', $file['tx_falmam_derivate_suffix']);
+	}
+
+	/**
+	 *
+	 * @test
+	 * @group focus
+	 * @return void
+	 */
+	public function metadataUpdateRespectsDerivateExtension() {
+		$this->importDataSet('UpdateMetadataEvent.xml');
+		extract($this->getEventQueueHandler(array('callHook')));
+		$this->mockFile('filepath/foo.png.jpg', 'jpg');
+
+		$client->expects($this->any())
+				->method('getBeans')
+				->will($this->returnValue(array(
+					array(
+						'id' => '1234',
+						'type' => 'file',
+						'properties' => array(
+							'data_name' => 'foo2.png',
+							'data_shellpath' => $this->testStoragePath . '/filepath/subpath/'
+						)
+					)
+		)));
+
+		$eventQueueHandler->execute();
+
+		$file = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file', 'uid=1');
+		$this->assertEquals('/filepath/subpath/foo2.png.jpg', $file['identifier']);
+		$this->assertEquals('jpg', $file['tx_falmam_derivate_suffix']);
 	}
 }

@@ -4,6 +4,7 @@ namespace Crossmedia\FalMam\Task;
 use Crossmedia\FalMam\Service\FileHandler;
 use Crossmedia\FalMam\Service\MamClient;
 use Crossmedia\FalMam\Task\EventHandlerState;
+use Crossmedia\FalMam\Utilities\Path;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -117,7 +118,7 @@ class EventQueueHandler extends AbstractTask {
 			}
 			$counter++;
 
-			// echo $event['object_id'] . chr(10);
+			// echo chr(10) . chr(10) . $event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target'] . chr(10);
 			$success = $this->processEvent($event);
 
 			if ($success === TRUE) {
@@ -218,14 +219,25 @@ class EventQueueHandler extends AbstractTask {
 		}
 
 		if ($event['target'] == 'file' || $event['target'] == 'both') {
-			$this->client->saveDerivate(
-				$bean['properties']['data_shellpath'] . $bean['properties']['data_name'],
+			$derivateSuffix = $this->client->saveDerivate(
+				Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name']),
 				$event['object_id']
 			);
+			$result = $this->createAsset(
+				$bean['properties']['data_name'],
+				$bean['properties']['data_shellpath'],
+				$event['object_id'],
+				$bean['properties'],
+				$derivateSuffix
+			);
+			// call hook after creating a file
+			$this->callHook('fileCreated', array(
+				Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name'])
+			));
 		}
 
 		if ($event['target'] == 'metadata' || $event['target'] == 'both') {
-			$result = $this->createAsset(
+			$result = $this->updateAsset(
 				$bean['properties']['data_name'],
 				$bean['properties']['data_shellpath'],
 				$event['object_id'],
@@ -249,15 +261,29 @@ class EventQueueHandler extends AbstractTask {
 		$result = TRUE;
 
 		if ($event['target'] == 'file' || $event['target'] == 'both') {
-			$this->moveFile(
-				$event['object_id'],
-				$bean['properties']['data_shellpath'],
-				$bean['properties']['data_name']
-			);
-			$this->client->saveDerivate(
-				$bean['properties']['data_shellpath'] . $bean['properties']['data_name'],
+			$fileObject = $this->getFileObject($event['object_id']);
+			// $this->moveFile(
+			// 	$event['object_id'],
+			// 	$bean['properties']['data_shellpath'],
+			// 	$bean['properties']['data_name']
+			// );
+			$derivateSuffix = $this->client->saveDerivate(
+				Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name']),
 				$event['object_id']
 			);
+
+			if ($fileObject === NULL) {
+				$result = $this->createAsset(
+					$bean['properties']['data_name'],
+					$bean['properties']['data_shellpath'],
+					$event['object_id'],
+					$bean['properties']
+				);
+			}
+			// call hook after creating a file
+			$this->callHook('fileUpdated', array(
+				$derivateSuffix
+			));
 		}
 
 		if ($event['target'] == 'metadata' || $event['target'] == 'both') {
@@ -292,10 +318,14 @@ class EventQueueHandler extends AbstractTask {
 	 * @param  string $metadata
 	 * @return void
 	 */
-	public function createAsset($filename, $filepath, $mamId, $metadata) {
-		$path = str_replace($this->configuration->base_path, '', $filepath . $filename);
+	public function createAsset($filename, $filepath, $mamId, $metadata, $derivateSuffix = '') {
+		if (strlen($derivateSuffix) > 0) {
+			$filename .= '.' . $derivateSuffix;
+		}
 
-		if (FALSE == $this->fileExists($filepath . $filename)) {
+		$path = str_replace($this->configuration->base_path, '', Path::join($filepath, $filename));
+
+		if (FALSE == $this->fileExists(Path::join($filepath, $filename))) {
 			return FALSE;
 		}
 
@@ -303,22 +333,15 @@ class EventQueueHandler extends AbstractTask {
 		$fileObject->_getMetaData();
 
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file', 'uid = ' . $fileObject->getUid(), array(
-			'tx_falmam_id' => $mamId
+			'tx_falmam_id' => $mamId,
+			'tx_falmam_derivate_suffix' => $derivateSuffix
 		));
 
-		$data = $this->mapMetadata($metadata);
-		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file_metadata', 'file=' . $fileObject->getUid(), $data);
-
 		// call hook after creating an asset
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['Service/DbHandler.php']['assetCreated'])) {
-			$params = array(
-				'path' => $path,
-				'fileObject' => $fileObject
-			);
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['Service/DbHandler.php']['assetCreated'] as $reference) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($reference, $params, $this);
-			}
-		}
+		$this->callHook('assetCreated', array(
+			'path' => $path,
+			'fileObject' => $fileObject
+		));
 
 		unset($fileObject, $path, $data);
 
@@ -338,14 +361,30 @@ class EventQueueHandler extends AbstractTask {
 		$fileObject = $this->getFileObject($mamId);
 
 		if ($fileObject === NULL) {
+			return FALSE;
+		}
+
+		$derivateSuffix = $this->getDerivateExtension($mamId);
+
+		if (strlen($derivateSuffix) > 0) {
+			$filename .= '.' . $derivateSuffix;
+		}
+
+		$oldFilePath = Path::join($this->configuration->base_path, $fileObject->getIdentifier());
+		$newFilePath = Path::join($filepath, $filename);
+
+		if (FALSE == $this->fileExists($newFilePath) && FALSE === $this->fileExists($oldFilePath)) {
+			// echo 'file does not exist: ' . Path::join($filepath, $filename) . chr(10);
+			return FALSE;
+		}
+
+		if ($fileObject === NULL) {
 			// false update event -> create!
-			return $this->createAsset($filename, $filepath, $mamId, $metadata);
+			// return $this->createAsset($filename, $filepath, $mamId, $metadata);
+			return FALSE;
 		}
 
 		$path = str_replace($this->configuration->base_path, '', $filepath . $filename);
-
-		$oldFilePath = realpath($this->configuration->base_path . $fileObject->getIdentifier());
-		$newFilePath = realpath($filepath . $filename);
 
 		if ($oldFilePath !== $newFilePath) {
 			$this->moveFile($mamId, $filepath, $filename);
@@ -355,15 +394,10 @@ class EventQueueHandler extends AbstractTask {
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file_metadata', 'file=' . $fileObject->getUid(), $data);
 
 		// call hook after updating an asset
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['Service/DbHandler.php']['assetUpdated'])) {
-			$params = array(
+		$this->callHook('assetUpdated', array(
 				'path' => $path,
 				'fileObject' => $fileObject
-			);
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['Service/DbHandler.php']['assetUpdated'] as $reference) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($reference, $params, $this);
-			}
-		}
+		));
 
 		unset($fileObject, $path, $data);
 
@@ -379,22 +413,27 @@ class EventQueueHandler extends AbstractTask {
 	 * @return void
 	 */
 	public function deleteAsset($mamId) {
-		$fileObject = $this->getFileObject($mamId);
+		$file = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file', 'tx_falmam_id = "' . $mamId . '"');
 
-		if ($fileObject === NULL) {
+		if ($file === FALSE) {
 			return;
 		}
-		$this->resourceStorage->deleteFile($fileObject);
+
+		if (file_exists($this->configuration->base_path . $file['identifier'])) {
+			$fileObject = $this->getFileObject($mamId);
+
+			if ($fileObject === NULL) {
+				return;
+			}
+			$this->resourceStorage->deleteFile($fileObject);
+		} else {
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('sys_file', 'tx_falmam_id = "' . $mamId . '"');
+		}
 
 		// call hook after deleting an asset
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['Service/DbHandler.php']['assetDeleted'])) {
-			$params = array(
-				'fileObject' => $fileObject
-			);
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['Service/DbHandler.php']['assetDeleted'] as $reference) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($reference, $params, $this);
-			}
-		}
+		$this->callHook('assetDeleted', array(
+			'fileObject' => $fileObject
+		));
 	}
 
 	/**
@@ -516,7 +555,28 @@ class EventQueueHandler extends AbstractTask {
 		}
 
 		return $this->resourceFactory->getFileObject($row['uid'], $row);
+	}
 
+	/**
+	 * fetches a fal file object from the ResourceFactory based on the provided
+	 * mamId
+	 *
+	 * @param  string $mamId
+	 * @return void
+	 */
+	public function getDerivateExtension($mamId) {
+		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			'*',
+			'sys_file',
+			'tx_falmam_id = "' . $mamId . '"'
+		);
+
+		if (!is_array($row)) {
+			// todo: exception!
+			return NULL;
+		}
+
+		return $row['tx_falmam_derivate_suffix'];
 	}
 
 	/**
@@ -620,6 +680,14 @@ class EventQueueHandler extends AbstractTask {
 	 */
 	public function fileExists($path) {
 		return file_exists($path);
+	}
+
+	public function callHook($hookIdentifier, $params) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['EventQueueHandler'][$hookIdentifier])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['EventQueueHandler'][$hookIdentifier] as $reference) {
+				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($reference, $params, $this);
+			}
+		}
 	}
 }
 

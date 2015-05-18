@@ -112,6 +112,9 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 	 * @return void
 	 */
 	public function syncAction() {
+		// flush "outdated" pending events
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', '1=1');
+
 		$this->state->setEventId(-1);
 		$this->state->setConfigHash($this->client->getConfigHash());
 		$this->state->save();
@@ -195,9 +198,6 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 		$this->dataHandler->start($data, array());
 		$this->dataHandler->process_datamap();
 		$this->addFlashMessage('mapping has been saved.');
-
-		// flush "outdated" pending events
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', '1=1');
 	}
 
 	/**

@@ -97,6 +97,14 @@ $tempColumns = array(
             'size' => '30',
         )
     ),
+    'tx_falmam_derivate_suffix' => array(
+        'exclude' => 0,
+        'label' => 'LLL:EXT:fal_mam/Resources/Private/Language/locallang_db.xml:sys_file.tx_falmam_derivate_suffix',
+        'config' => array(
+            'type' => 'input',
+            'size' => '30',
+        )
+    ),
 );
 
 
