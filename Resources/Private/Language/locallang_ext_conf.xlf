@@ -25,6 +25,9 @@
 			<trans-unit id="fal_mam.storage_pid" xml:space="preserve">
 				<source>PID of a Sysfolder to Store configuration and event queue</source>
 			</trans-unit>
+			<trans-unit id="fal_mam.mam_shell_path" xml:space="preserve">
+				<source>Remote shell path that needs to be removed from the received paths</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

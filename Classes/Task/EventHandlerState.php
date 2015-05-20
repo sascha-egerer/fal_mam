@@ -6,6 +6,10 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
+/**
+ * This class loads, contains and saves the state of the synchronisation of the
+ * event handler.
+ */
 class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 
 	/**

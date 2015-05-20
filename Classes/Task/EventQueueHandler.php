@@ -10,7 +10,10 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
 
-
+/**
+ * This Scheduler task checks if ther are any events waiting in the event_queue
+ * and processes them.
+ */
 class EventQueueHandler extends AbstractTask {
 
 	/**
@@ -102,6 +105,10 @@ class EventQueueHandler extends AbstractTask {
 		$this->resourceFactory = $resourceFactory;
 	}
 
+	/**
+	 * This Scheduler task checks if ther are any events waiting in the event_queue
+	 * and processes them.
+	 */
 	public function execute() {
 		$this->initialize();
 
@@ -133,6 +140,12 @@ class EventQueueHandler extends AbstractTask {
 		return TRUE;
 	}
 
+	/**
+	 * We need to inject by ourself, because the automatic dependency injection
+	 * doesn't seem to work for Scheduler Tasks.
+	 *
+	 * @return void
+	 */
 	public function initialize() {
 		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
 		if ($this->client === NULL) {
@@ -647,6 +660,12 @@ class EventQueueHandler extends AbstractTask {
 		}
 	}
 
+	/**
+	 * checks for and deletes any empty folders in a given path
+	 *
+	 * @param  string $path
+	 * @return void
+	 */
 	public function cleanupEmptyFoldersInRootline($path) {
 		$absolutePath = realpath($path);
 		if (substr($path, 0, 1) === '/' || strlen($path) < 1) {
@@ -682,6 +701,13 @@ class EventQueueHandler extends AbstractTask {
 		return file_exists($path);
 	}
 
+	/**
+	 * call a hook with a given parameter
+	 *
+	 * @param string $hookIdentifier
+	 * @param array $params
+	 * @return void
+	 */
 	public function callHook($hookIdentifier, $params) {
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['EventQueueHandler'][$hookIdentifier])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['EventQueueHandler'][$hookIdentifier] as $reference) {

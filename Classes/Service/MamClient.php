@@ -390,6 +390,13 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		return $derivateSuffix;
 	}
 
+	/**
+	 * build a remote request towards the MAM API
+	 *
+	 * @param string $method
+	 * @param array $parameters
+	 * @return array
+	 */
 	public function getRequest($method, $parameter) {
 		$uri = $this->restUrl . '&method=' . $method . '&parameter=' . json_encode($parameter);
 		$response = $this->doGetRequest($uri);
@@ -402,10 +409,31 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		return $result['result'];
 	}
 
+	/**
+	 * execute a remote request towards the MAM API
+	 *
+	 * @param string $uri
+	 * @return array
+	 */
 	public function doGetRequest($uri) {
 		return \Requests::get($uri)->body;
 	}
 
+	/**
+	 * normalizes an MAM result array into a flatter php array
+	 *
+	 * example:
+	 *
+	 * input:                 =>     output:
+	 * array (                       array (
+	 *   'foo' => array(               'foo' => 'bar'
+	 *     'value' => 'bar'          )
+	 *   )
+	 * )
+	 *
+	 * @param array $input
+	 * @return array
+	 */
 	public function normalizeArray($input) {
 		if (is_array($input)) {
 			foreach ($input as $key => $value) {
@@ -422,6 +450,17 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		return $input;
 	}
 
+	/**
+	 * normalizes a shell_path by removing the remote base shell_path to receive
+	 * a "relative" shell_path
+	 *
+	 * Example (configuration['mam_shell_path'] = '/usr/local/mam/wanzl/'):
+	 *
+	 * /usr/local/mam/wanzl/data/foo.png   => data/foo.png
+	 *
+	 * @param string $path
+	 * @return string
+	 */
 	public function normalizePath($path) {
 		if (strlen($this->configuration['mam_shell_path']) > 0) {
 			$path = rtrim($this->configuration['base_path'], '/') . '/' . ltrim(str_replace($this->configuration['mam_shell_path'], '', $path), '/');

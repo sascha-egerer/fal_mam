@@ -11,50 +11,71 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 class Configuration implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
+	 * Base URL of the remote MAM API endpoint
+	 *
 	 * @var string
 	 */
 	public $base_url;
 
 	/**
+	 * Name of the connector for communication with the MAM API
+	 *
 	 * @var string
 	 */
 	public $connector_name;
 
 	/**
+	 * Username for the MAM API
+	 *
 	 * @var string
 	 */
 	public $username;
 
 	/**
+	 * Password for the MAM API
+	 *
 	 * @var string
 	 */
 	public $password;
 
 	/**
+	 * Customer name for the MAM API
+	 *
 	 * @var string
 	 */
 	public $customer;
 
 	/**
+	 * Absolute path to the local file storage directory
+	 *
 	 * @var string
 	 */
 	public $base_path;
 
 	/**
+	 * UID of the configured MAM FAL Storage
+	 *
 	 * @var string
 	 */
 	public $storage_pid;
 
 	/**
+	 * Remote shell path that needs to be removed from the received paths
+	 *
 	 * @var string
 	 */
 	public $mam_shell_path;
 
 	/**
+	 * Mapping of MAM Fields to FAL Metadata fields
+	 *
 	 * @var array
 	 */
 	public $mapping = array();
 
+	/**
+	 * load basic configuration and mapping
+	 */
 	public function __construct() {
 		if(isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
 			$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);

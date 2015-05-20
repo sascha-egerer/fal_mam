@@ -7,7 +7,10 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
 
-
+/**
+ * This Scheduler Task fetches events from the MAM API and queues them into
+ * the tx_falmam_event_queue table.
+ */
 class EventHandler extends AbstractTask {
 
 	/**
@@ -63,6 +66,16 @@ class EventHandler extends AbstractTask {
 		$this->configuration = $configuration;
 	}
 
+	/**
+	 * This Scheduler Task fetches events from the MAM API and queues them into
+	 * the tx_falmam_event_queue table.
+	 *
+	 * Additionally it checks if the configuration in MAM has changed and notifies
+	 * the administrator through e-mail that he may have to update the mapping
+	 * of new fields and start a full sync to pull in old metadata.
+	 *
+	 * @return [type] [description]
+	 */
 	public function execute() {
 		$this->initialize();
 
@@ -83,9 +96,8 @@ class EventHandler extends AbstractTask {
 
 		// flush "outdated" pending events
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', '1=1');
-		$this->state->setEventId(330);
 
-		echo 'fetching events starting from: ' . ($this->state->getEventId() + 1) . chr(10);
+		// echo 'fetching events starting from: ' . ($this->state->getEventId() + 1) . chr(10);
 		// var_dump($this->client->getEvents($this->state->getEventId() + 1));
 		while (count($events = $this->client->getEvents($this->state->getEventId() + 1)) > 0) {
 			$start = microtime(TRUE);
@@ -111,6 +123,12 @@ class EventHandler extends AbstractTask {
 		return TRUE;
 	}
 
+	/**
+	 * We need to inject by ourself, because the automatic dependency injection
+	 * doesn't seem to work for Scheduler Tasks.
+	 *
+	 * @return void
+	 */
 	public function initialize() {
 		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
 		if ($this->client === NULL) {
@@ -127,6 +145,13 @@ class EventHandler extends AbstractTask {
 		}
 	}
 
+	/**
+	 * bulk saves the events to the tx_falmam_event_queue table for better
+	 * performance.
+	 *
+	 * @param  array $data
+	 * @return void
+	 */
 	public function saveEvents($data) {
 		$this->dataHandler->start($data, array());
 		$this->dataHandler->process_datamap();

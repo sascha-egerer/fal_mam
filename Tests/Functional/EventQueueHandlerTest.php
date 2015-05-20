@@ -166,13 +166,15 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$configuration = $this->getMock('\Crossmedia\FalMam\Service\Configuration');
 		$eventQueueHandler->injectConfiguration($configuration);
 		$configuration->base_path = $this->testStoragePath;
+		$configuration->connector_name = 'some_connector';
 
 		return array(
 			'eventQueueHandler' => $eventQueueHandler,
 			'client'=> $client,
 			'state'=> $state,
 			'resourceFactory' => $resourceFactory,
-			'file' => $file
+			'file' => $file,
+			'configuration' => $configuration
 		);
 	}
 
@@ -582,7 +584,6 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	/**
 	 *
 	 * @test
-	 * @group focus
 	 * @return void
 	 */
 	public function metadataUpdateRespectsDerivateExtension() {
@@ -608,5 +609,87 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$file = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file', 'uid=1');
 		$this->assertEquals('/filepath/subpath/foo2.png.jpg', $file['identifier']);
 		$this->assertEquals('jpg', $file['tx_falmam_derivate_suffix']);
+	}
+
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function metadataMappingWorks() {
+		$this->importDataSet('UpdateMetadataEvent.xml');
+		extract($this->getEventQueueHandler(array('callHook')));
+		$this->mockFile('filepath/foo.png');
+
+		$configuration->mapping = array(
+			'some_field' => array(
+				'fal_field' => 'title'
+			)
+		);
+
+		$client->expects($this->any())
+				->method('getBeans')
+				->will($this->returnValue(array(
+					array(
+						'id' => '1234',
+						'type' => 'file',
+						'properties' => array(
+							'data_name' => 'foo.png',
+							'data_shellpath' => $this->testStoragePath . '/filepath/',
+							'some_field' => 'foo'
+						)
+					)
+		)));
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+
+		$eventQueueHandler->execute();
+
+		$this->assetEventStatus('DONE', 1);
+
+		$metadata = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file_metadata', 'file=1');
+		$this->assertEquals('foo', $metadata['title']);
+	}
+
+	/**
+	 *
+	 * @test
+	 * @group focus
+	 * @return void
+	 */
+	public function metadataMappingWorksWithValueMap() {
+		$this->importDataSet('UpdateMetadataEvent.xml');
+		extract($this->getEventQueueHandler(array('callHook')));
+		$this->mockFile('filepath/foo.png');
+
+		$configuration->mapping = array(
+			'some_field' => array(
+				'fal_field' => 'title',
+				'value_map' => array(
+					'foo' => 'bar'
+				)
+			)
+		);
+
+		$client->expects($this->any())
+				->method('getBeans')
+				->will($this->returnValue(array(
+					array(
+						'id' => '1234',
+						'type' => 'file',
+						'properties' => array(
+							'data_name' => 'foo.png',
+							'data_shellpath' => $this->testStoragePath . '/filepath/',
+							'some_field' => 'foo'
+						)
+					)
+		)));
+		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+
+		$eventQueueHandler->execute();
+
+		$this->assetEventStatus('DONE', 1);
+
+		$metadata = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_file_metadata', 'file=1');
+		$this->assertEquals('bar', $metadata['title']);
 	}
 }
