@@ -79,8 +79,28 @@ class EventHandler extends AbstractTask {
 	public function execute() {
 		$this->initialize();
 
-		if ($this->hasConfigurationChanged()) {
+		if ($this->hasConfigurationChanged() && $this->state->getNotified() < (time() - (60 *60 * 24))) {
 			// notify someone to update the configuration
+
+			$mail = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+			$from = strlen($GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress']) > 0 ? $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromAddress'] : 'no-reply@foo.bar';
+			$mail->setFrom($from)
+				 ->setTo($this->configuration->admin_mail)
+			     ->setSubject('MAM API Configuration has changed!')
+			     ->setContentType("text/html")
+			     ->setBody('
+			     	<p><strong>Please check the field mapping configuration to map new/changed fields</strong></p>
+
+			     	<p>
+			     		<strong>Sitename:</strong> ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '<br />
+			     		<strong>Connector Name</strong> ' . $this->configuration->connector_name . '<br />
+			     		<strong>Customer Name</strong> ' . $this->configuration->customer . '<br />
+			     	</p>
+			     ')
+			     ->send();
+
+			$this->state->setNotified(time());
+			$this->state->save();
 		}
 
 		$eventTypes = array(
@@ -95,7 +115,7 @@ class EventHandler extends AbstractTask {
 		);
 
 		// flush "outdated" pending events
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', '1=1');
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', 'status = "DONE" AND tstamp < ' . (time() - 60 * 60 * 24));
 
 		// echo 'fetching events starting from: ' . ($this->state->getEventId() + 1) . chr(10);
 		// var_dump($this->client->getEvents($this->state->getEventId() + 1));

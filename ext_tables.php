@@ -110,6 +110,6 @@ $tempColumns = array(
 
 t3lib_div::loadTCA('sys_file');
 t3lib_extMgm::addTCAcolumns('sys_file',$tempColumns,1);
-t3lib_extMgm::addToAllTCAtypes('sys_file','tx_falmam_id;;;;1-1-1');
+t3lib_extMgm::addToAllTCAtypes('sys_file','tx_falmam_id;;;;1-1-1,tx_falmam_derivate_suffix;;;;1-1-1');
 
 ?>

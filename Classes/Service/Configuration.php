@@ -74,6 +74,13 @@ class Configuration implements \TYPO3\CMS\Core\SingletonInterface {
 	public $mapping = array();
 
 	/**
+	 * Mail to notify about configuration changes
+	 *
+	 * @var string
+	 */
+	public $admin_mail = array();
+
+	/**
 	 * load basic configuration and mapping
 	 */
 	public function __construct() {

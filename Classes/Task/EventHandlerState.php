@@ -52,6 +52,11 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	/**
 	 * @var integer
 	 */
+	protected $notified = 0;
+
+	/**
+	 * @var integer
+	 */
 	protected $uid = 'NEW';
 
 	/**
@@ -106,6 +111,7 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
  		$this->eventId = $row['event_id'];
  		$this->syncId = $row['sync_id'];
  		$this->syncOffset = $row['sync_offset'];
+ 		$this->notified = $row['notified'];
  		$this->uid = $row['uid'];
 
  		return true;
@@ -123,7 +129,8 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 			'config_hash' => $this->configHash,
 			'event_id' => $this->eventId,
 			'sync_id' => $this->syncId,
-			'sync_offset' => $this->syncOffset
+			'sync_offset' => $this->syncOffset,
+			'notified' => $this->notified
 		);
 
  		if ($this->uid == 'NEW') {
@@ -223,6 +230,20 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 	public function increaseSyncOffset() {
 		$this->initialize();
 		$this->syncOffset = $this->syncOffset + 1000;
+	}
+
+	/**
+	 * @param integer $notified
+	 */
+	public function setNotified($notified) {
+		$this->notified = $notified;
+	}
+
+	/**
+	 * @return integer
+	 */
+	public function getNotified() {
+		return $this->notified;
 	}
 }
 

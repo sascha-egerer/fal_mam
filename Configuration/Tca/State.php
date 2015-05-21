@@ -6,7 +6,7 @@ if (!defined('TYPO3_MODE')) {
 $TCA['tx_falmam_state'] = array(
     'ctrl' => $TCA['tx_falmam_state']['ctrl'],
     'interface' => array(
-        'showRecordFieldList' => 'hidden,connector_name,config_hash,event_id,sync_id,sync_offset'
+        'showRecordFieldList' => 'hidden,connector_name,config_hash,event_id,sync_id,sync_offset,notified'
     ),
     'feInterface' => $TCA['tx_falmam_state']['feInterface'],
     'columns' => array(
@@ -58,9 +58,17 @@ $TCA['tx_falmam_state'] = array(
                 'size' => '30',
             )
         ),
+        'notified' => array(
+            'exclude' => 0,
+            'label' => 'LLL:EXT:fal_mam/Resources/Private/Language/locallang_db.xml:tx_falmam_event_queue.notified',
+            'config' => array(
+                'type' => 'input',
+                'size' => '30',
+            )
+        ),
     ),
     'types' => array(
-        '0' => array('showitem' => 'hidden;;1;;1-1-1, connector_name, config_hash, event_id, sync_id, sync_offset')
+        '0' => array('showitem' => 'hidden;;1;;1-1-1, connector_name, config_hash, event_id, sync_id, sync_offset, notified')
     ),
     'palettes' => array(
         '1' => array('showitem' => '')

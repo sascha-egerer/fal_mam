@@ -14,6 +14,7 @@ CREATE TABLE tx_falmam_state (
     event_id tinytext,
     sync_id tinytext,
     sync_offset tinytext,
+    notified int(11) DEFAULT '0' NOT NULL,
 
     PRIMARY KEY (uid),
     KEY parent (pid)
