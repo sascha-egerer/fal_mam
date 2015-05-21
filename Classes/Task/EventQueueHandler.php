@@ -243,9 +243,10 @@ class EventQueueHandler extends AbstractTask {
 				$bean['properties'],
 				$derivateSuffix
 			);
+
 			// call hook after creating a file
 			$this->callHook('fileCreated', array(
-				Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name'])
+				'path' => Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name'])
 			));
 		}
 
@@ -293,9 +294,10 @@ class EventQueueHandler extends AbstractTask {
 					$bean['properties']
 				);
 			}
+
 			// call hook after creating a file
 			$this->callHook('fileUpdated', array(
-				$derivateSuffix
+				'fileObject' => $fileObject
 			));
 		}
 
@@ -612,6 +614,12 @@ class EventQueueHandler extends AbstractTask {
 				$data[$mapping['fal_field']] = $value;
 			}
 		}
+
+		// call hook after deleting an asset
+		$this->callHook('mapMetadata', array(
+			'data' => &$data
+		));
+
 		return $data;
 	}
 

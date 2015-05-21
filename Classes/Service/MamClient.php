@@ -402,7 +402,7 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		$response = $this->doGetRequest($uri);
 		$result = json_decode($response, TRUE);
 		if (!isset($result['code']) || $result['code'] !== 0) {
-			var_dump($result, $uri, $this->sessionId);
+			// var_dump($result, $uri, $this->sessionId);
 			$message = isset($result['message']) ? $result['message'] : 'MamClient: could not communicate with mam api. please try again later';
 			throw new MamApiException($message);
 		}

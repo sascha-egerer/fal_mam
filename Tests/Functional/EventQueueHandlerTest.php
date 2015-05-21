@@ -291,7 +291,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 					)
 		)));
 
-		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+		$eventQueueHandler->expects($this->at(0))->method('callHook')->with($this->equalTo('mapMetadata'));
+		$eventQueueHandler->expects($this->at(1))->method('callHook')->with($this->equalTo('assetUpdated'));
 
 		$eventQueueHandler->execute();
 
@@ -438,7 +439,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 						)
 					)
 		)));
-		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+		$eventQueueHandler->expects($this->at(0))->method('callHook')->with($this->equalTo('mapMetadata'));
+		$eventQueueHandler->expects($this->at(1))->method('callHook')->with($this->equalTo('assetUpdated'));
 
 		$eventQueueHandler->execute();
 
@@ -499,7 +501,9 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 						)
 					)
 		)));
-		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+
+		$eventQueueHandler->expects($this->at(0))->method('callHook')->with($this->equalTo('mapMetadata'));
+		$eventQueueHandler->expects($this->at(1))->method('callHook')->with($this->equalTo('assetUpdated'));
 
 		$eventQueueHandler->execute();
 
@@ -640,7 +644,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 						)
 					)
 		)));
-		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+		$eventQueueHandler->expects($this->at(0))->method('callHook')->with($this->equalTo('mapMetadata'));
+		$eventQueueHandler->expects($this->at(1))->method('callHook')->with($this->equalTo('assetUpdated'));
 
 		$eventQueueHandler->execute();
 
@@ -683,7 +688,8 @@ class EventQueueHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 						)
 					)
 		)));
-		$eventQueueHandler->expects($this->once())->method('callHook')->with($this->equalTo('assetUpdated'));
+		$eventQueueHandler->expects($this->at(0))->method('callHook')->with($this->equalTo('mapMetadata'));
+		$eventQueueHandler->expects($this->at(1))->method('callHook')->with($this->equalTo('assetUpdated'));
 
 		$eventQueueHandler->execute();
 

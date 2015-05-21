@@ -30,8 +30,9 @@ class EventHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$eventHandler = $this->getMock('\Crossmedia\FalMam\Task\EventHandler', array('saveEvents'));
 		$eventHandler->injectClient($client);
 		$eventHandler->injectState($state);
-
+		$client->expects($this->once())->method('getConfigHash')->will($this->returnValue('foo'));
 		$state->expects($this->once())->method('getConfigHash')->will($this->returnValue('foo'));
+
 		$client->expects($this->exactly(2))
 			->method('getEvents')
 			->will($this->onConsecutiveCalls(

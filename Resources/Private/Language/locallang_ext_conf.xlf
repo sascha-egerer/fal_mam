@@ -28,6 +28,9 @@
 			<trans-unit id="fal_mam.mam_shell_path" xml:space="preserve">
 				<source>Remote shell path that needs to be removed from the received paths</source>
 			</trans-unit>
+			<trans-unit id="fal_mam.admin_mail" xml:space="preserve">
+				<source>Mail to notify about configuration Changes</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

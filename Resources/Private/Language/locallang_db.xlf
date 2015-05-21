@@ -10,6 +10,7 @@
             <label index="tx_falmam_state.connector_name">Connector Name</label>
             <label index="tx_falmam_state.config_hash">Last seen Configuration Hash</label>
             <label index="tx_falmam_state.event_id">Last processed Event ID</label>
+            <label index="tx_falmam_state.notified">Time of notification</label>
             <label index="tx_falmam_log">Log</label>
             <label index="tx_falmam_log.connector_name">Connector Name</label>
             <label index="tx_falmam_log.config_hash">Configuration Hash</label>
