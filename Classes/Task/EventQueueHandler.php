@@ -610,8 +610,17 @@ class EventQueueHandler extends AbstractTask {
 			if (isset($metadata[$mamField]) && strlen($mapping['fal_field']) > 0) {
 				$value = $metadata[$mamField];
 
-				if (isset($mapping['value_map'][$value])) {
-					$value = $mapping['value_map'][$value];
+				if (is_array($value)) {
+					foreach ($value as $key => $subValue) {
+						if (isset($mapping['value_map'][$subValue])) {
+							$value[$key] = $mapping['value_map'][$subValue];
+						}
+					}
+					$value = implode(',', $value);
+				} else {
+					if (isset($mapping['value_map'][$value])) {
+						$value = $mapping['value_map'][$value];
+					}
 				}
 
 				$data[$mapping['fal_field']] = $value;
@@ -620,7 +629,8 @@ class EventQueueHandler extends AbstractTask {
 
 		// call hook after deleting an asset
 		$this->callHook('mapMetadata', array(
-			'data' => &$data
+			'data' => &$data,
+			'metadata' => $metadata
 		));
 
 		return $data;
