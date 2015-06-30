@@ -372,7 +372,8 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		rewind($headerBuff);
 		$headers = stream_get_contents($headerBuff);
 		$derivateSuffix = '';
-		if(preg_match('/Content-Disposition: .*filename="([^ \n"]+)"/', $headers, $matches)) {
+
+		if(preg_match('/Content-Disposition: .*filename="([^\n"]+)"/', $headers, $matches)) {
 			$derivateFilename = trim($matches[1]);
 			$derivateSuffix = strtolower(pathinfo($derivateFilename, PATHINFO_EXTENSION));
 		}
