@@ -93,6 +93,8 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 		// Save mapping and restart sync
 		if ($fields !== NULL) {
 			$this->saveFields($fields, $valueMaps);
+			$this->state->setConfigHash($this->client->getConfigHash());
+			$this->state->save();
 		}
 
 		if ($this->hasConfigurationChanged()) {
@@ -117,7 +119,6 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', '1=1');
 
 		$this->state->setEventId(-1);
-		$this->state->setConfigHash($this->client->getConfigHash());
 		$this->state->save();
 		$this->addFlashMessage('full synchronisation will start shortly.');
 		$this->redirect('configuration');
