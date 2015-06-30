@@ -18,7 +18,7 @@ class EventQueueHandlerFieldProvider implements AdditionalFieldProviderInterface
     public function getAdditionalFields(array &$taskInfo, $task, SchedulerModuleController $parentObject) {
         if (empty($taskInfo['items'])) {
             if($parentObject->CMD == 'edit') {
-                $taskInfo['items'] = $task->items;
+                $taskInfo['items'] = $task->getItems();
             } else {
                 $taskInfo['items'] = '';
             }
@@ -56,7 +56,7 @@ class EventQueueHandlerFieldProvider implements AdditionalFieldProviderInterface
      * @return void
      */
     public function saveAdditionalFields(array $submittedData, AbstractTask $task) {
-        $task->items = $submittedData['items'];
+        $task->setItems($submittedData['items']);
     }
 }
 ?>

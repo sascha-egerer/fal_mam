@@ -50,7 +50,7 @@ class EventQueueHandler extends AbstractTask {
 	/**
 	 * @var string
 	 */
-	public $items = 10;
+	protected $items = 10;
 
 	/**
 	 * @var integer
@@ -112,8 +112,6 @@ class EventQueueHandler extends AbstractTask {
 	public function execute() {
 		$this->initialize();
 
-		$this->items = 1000;
-
 		$counter = 0;
 		$start = time();
 		while ($counter < $this->items) {
@@ -125,7 +123,7 @@ class EventQueueHandler extends AbstractTask {
 			}
 			$counter++;
 
-			// echo chr(10) . chr(10) . $event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target'] . chr(10);
+			echo $event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target'] . chr(10);
 			$success = $this->processEvent($event);
 
 			if ($success === TRUE) {
@@ -236,6 +234,7 @@ class EventQueueHandler extends AbstractTask {
 				Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name']),
 				$event['object_id']
 			);
+
 			$result = $this->createAsset(
 				$bean['properties']['data_name'],
 				$bean['properties']['data_shellpath'],
@@ -276,11 +275,7 @@ class EventQueueHandler extends AbstractTask {
 
 		if ($event['target'] == 'file' || $event['target'] == 'both') {
 			$fileObject = $this->getFileObject($event['object_id']);
-			// $this->moveFile(
-			// 	$event['object_id'],
-			// 	$bean['properties']['data_shellpath'],
-			// 	$bean['properties']['data_name']
-			// );
+
 			$derivateSuffix = $this->client->saveDerivate(
 				Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name']),
 				$event['object_id']
@@ -341,6 +336,7 @@ class EventQueueHandler extends AbstractTask {
 		$path = str_replace($this->configuration->base_path, '', Path::join($filepath, $filename));
 
 		if (FALSE == $this->fileExists(Path::join($filepath, $filename))) {
+			var_dump(Path::join($filepath, $filename), 'woot?');
 			return FALSE;
 		}
 
@@ -735,6 +731,20 @@ class EventQueueHandler extends AbstractTask {
 				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($reference, $params, $this);
 			}
 		}
+	}
+
+	/**
+	 * @param integer $items
+	 */
+	public function setItems($items) {
+		$this->items = $items;
+	}
+
+	/**
+	 * @return integer
+	 */
+	public function getItems() {
+		return $this->items;
 	}
 }
 
