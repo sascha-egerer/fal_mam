@@ -20,31 +20,6 @@ CREATE TABLE tx_falmam_state (
     KEY parent (pid)
 );
 
-
-
-#
-# Table structure for table 'tx_falmam_log'
-#
-CREATE TABLE tx_falmam_log (
-    uid int(11) NOT NULL auto_increment,
-    pid int(11) DEFAULT '0' NOT NULL,
-    tstamp int(11) DEFAULT '0' NOT NULL,
-    crdate int(11) DEFAULT '0' NOT NULL,
-    cruser_id int(11) DEFAULT '0' NOT NULL,
-    deleted tinyint(4) DEFAULT '0' NOT NULL,
-    hidden tinyint(4) DEFAULT '0' NOT NULL,
-    connector_name tinytext,
-    config_hash tinytext,
-    event_id tinytext,
-    start_time int(11) DEFAULT '0' NOT NULL,
-    end_time int(11) DEFAULT '0' NOT NULL,
-    event_count int(11) DEFAULT '0' NOT NULL,
-    runtime double(11,2) DEFAULT '0.00' NOT NULL,
-
-    PRIMARY KEY (uid),
-    KEY parent (pid)
-);
-
 #
 # Table structure for table 'tx_falmam_event_queue'
 #
