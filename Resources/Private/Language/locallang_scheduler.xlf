@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.0">
+	<file source-language="en" datatype="plaintext" original="messages" date="2012-06-13T20:22:32Z" product-name="fal_mam">
+		<header/>
+		<body>
+			<trans-unit id="eventHandler.name" xml:space="preserve">
+				<source>TYPO3 MAM EventHandler</source>
+				<source>TYPO3 MAM EventHandler</source>
+			</trans-unit>
+			<trans-unit id="eventHandler.description" xml:space="preserve">
+				<source>This task fetches events and writes them to a queue</source>
+				<source>This task fetches events and writes them to a queue</source>
+			</trans-unit>
+			<trans-unit id="eventQueueHandler.name" xml:space="preserve">
+				<source>TYPO3 MAM Event Queue Handler</source>
+				<source>TYPO3 MAM Event Queue Handler</source>
+			</trans-unit>
+			<trans-unit id="eventQueueHandler.description" xml:space="preserve">
+				<source>This task takes events out of the queue and processes them</source>
+				<source>This task takes events out of the queue and processes them</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>
