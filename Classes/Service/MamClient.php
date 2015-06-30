@@ -355,7 +355,9 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		$temporaryFilename = tempnam(sys_get_temp_dir(), 'fal_mam-' . $objectId);
 
 		ob_start();
-		mkdir(dirname($temporaryFilename), 0777, TRUE);
+		if (!file_exists(dirname($temporaryFilename))) {
+			mkdir(dirname($temporaryFilename), 0777, TRUE);
+		}
 
 		$fp = fopen($temporaryFilename, 'w+');
 		$ch = curl_init($uri);
