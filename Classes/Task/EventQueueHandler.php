@@ -526,7 +526,7 @@ class EventQueueHandler extends AbstractTask {
 			array(
 				'tstamp' => time(),
 				'status' => 'NEW',
-				'skipuntil' => time() + 1
+				'skipuntil' => time() + 30
 			)
 		);
 	}
