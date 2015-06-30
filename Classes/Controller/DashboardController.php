@@ -268,7 +268,7 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 	public function getFalFieldsFromTca() {
 		$falFields = array('' => '- not mapped -');
 		foreach ($GLOBALS['TCA']['sys_file_metadata']['columns'] as $columnName => $column) {
-			$falFields[$columnName] = $column['label'] . ' (' . $columnName . ')';
+			$falFields[$columnName] = LocalizationUtility::translate($column['label'], '') . ' (' . $columnName . ')';
 		}
 		ksort($falFields);
 		return $falFields;
