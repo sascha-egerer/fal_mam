@@ -62,21 +62,22 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 		$this->view->assign('totalPending', $totalPending);
 
 		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
-			'SUM(runtime) / SUM(event_count) as seconds_per_event',
-			'tx_falmam_log',
-			'tstamp > "' . (time() - (60 * 60)) . '"'
+			'SUM(runtime) / COUNT(uid) as seconds_per_event',
+			'tx_falmam_event_queue',
+			'status = "DONE" AND tstamp > "' . (time() - (60 * 60)) . '"'
 		);
 		// take full log into account if nothing happened in the last hour
 		if ($row['seconds_per_event'] === 0) {
 			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
-				'SUM(runtime) / SUM(event_count) as seconds_per_event',
-				'tx_falmam_log'
+				'SUM(runtime) / COUNT(uid) as seconds_per_event',
+				'tx_falmam_event_queue',
+				'status = "DONE"'
 			);
 		}
 
 		// $runtimes = $this->getEventQueueRuntimes($totalPending);
 		$runtimes = array();
-		$runtimes['averageRuntime'] = intval($row['seconds_per_event'] * 1000);
+		$runtimes['averageRuntime'] = intval($row['seconds_per_event']);
 		$runtimes['remainingRuntime'] = $this->convertSecondsToHumanTime((($row['seconds_per_event'] * $totalPending)));
 		$this->view->assign('runtimes', $runtimes);
 	}
