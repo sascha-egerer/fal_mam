@@ -50,7 +50,7 @@ class EventQueueHandler extends AbstractTask {
 	/**
 	 * @var string
 	 */
-	protected $items = 10;
+	public $items = 10;
 
 	/**
 	 * @var integer
