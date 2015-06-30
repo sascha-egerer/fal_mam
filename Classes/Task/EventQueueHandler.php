@@ -334,7 +334,7 @@ class EventQueueHandler extends AbstractTask {
 	 * @return void
 	 */
 	public function createAsset($filename, $filepath, $mamId, $metadata, $derivateSuffix = '') {
-		if (strlen($derivateSuffix) > 0) {
+		if (strlen($derivateSuffix) > 0 && strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== $derivateSuffix)	{
 			$filename .= '.' . $derivateSuffix;
 		}
 
