@@ -352,6 +352,9 @@ class EventQueueHandler extends AbstractTask {
 			'tx_falmam_derivate_suffix' => $derivateSuffix
 		));
 
+		$data = $this->mapMetadata($metadata);
+		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file_metadata', 'file=' . $fileObject->getUid(), $data);
+
 		// call hook after creating an asset
 		$this->callHook('assetCreated', array(
 			'path' => $path,
