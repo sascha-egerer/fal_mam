@@ -6,6 +6,7 @@ use Crossmedia\FalMam\Service\MamClient;
 use Crossmedia\FalMam\Task\EventHandlerState;
 use Crossmedia\FalMam\Utilities\Path;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
@@ -55,7 +56,7 @@ class EventQueueHandler extends AbstractTask {
 	/**
 	 * @var integer
 	 */
-	protected $reclaimTime = 60;
+	protected $reclaimTime = 360;
 
 	/**
 	 * @param  \Crossmedia\FalMam\Service\MamClient $client
@@ -114,6 +115,7 @@ class EventQueueHandler extends AbstractTask {
 
 		$counter = 0;
 		$start = time();
+		// $this->items = 10;
 		while ($counter < $this->items) {
 			$event = $this->claimEventFromQueue();
 
@@ -130,6 +132,7 @@ class EventQueueHandler extends AbstractTask {
 				$this->finnishEvent($event);
 			} else {
 				$this->rescheduleEvent($event);
+				// echo $this->reason . chr(10);
 			}
 			unset($event);
 		}
@@ -166,6 +169,8 @@ class EventQueueHandler extends AbstractTask {
 		if ($this->resourceFactory === NULL) {
 			$this->injectResourceFactory(ResourceFactory::getInstance());
 		}
+
+        chdir(PATH_site);
 	}
 
 	/**
@@ -219,6 +224,11 @@ class EventQueueHandler extends AbstractTask {
 	 */
 	public function processCreateEvent($event) {
 		$beans = $this->client->getBeans($event['object_id']);
+
+		if ($beans === NULL) {
+			return TRUE;
+		}
+
 		$bean = current($beans);
 
 		$result = TRUE;
@@ -269,6 +279,9 @@ class EventQueueHandler extends AbstractTask {
 	 */
 	public function processUpdateEvent($event) {
 		$beans = $this->client->getBeans($event['object_id']);
+		if ($beans === NULL) {
+			return TRUE;
+		}
 		$bean = current($beans);
 
 		$result = TRUE;
@@ -336,16 +349,28 @@ class EventQueueHandler extends AbstractTask {
 		$path = str_replace($this->configuration->base_path, '', Path::join($filepath, $filename));
 
 		if (FALSE == $this->fileExists(Path::join($filepath, $filename))) {
-			var_dump(Path::join($filepath, $filename), 'woot?');
+			$this->reason = 'no file has been downloaded';
 			return FALSE;
 		}
 
-		$fileObject = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $path);
+		// if (isset($metadata['data_size']) && filesize(Path::join($filepath, $filename)) < $metadata['data_size']) {
+		// 	$this->reason = 'something went wrong, the downloaded file is smaller than expected: expected ' . $metadata['data_size'] . '+ received: ' . filesize(Path::join($filepath, $filename)) . ' missing: ' . ($metadata['data_size'] - filesize(Path::join($filepath, $filename)));
+		// 	// something went wrong, the downloaded file is smaller than expected -> fail!;
+		// 	return FALSE;
+		// }
+
+		try {
+			$fileObject = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $path);
+		} catch (\Exception $e) {
+			$this->reason = 'file could not be imported into fal';
+			return FALSE;
+		}
 		$fileObject->_getMetaData();
 
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file', 'uid = ' . $fileObject->getUid(), array(
 			'tx_falmam_id' => $mamId,
-			'tx_falmam_derivate_suffix' => $derivateSuffix
+			'tx_falmam_derivate_suffix' => $derivateSuffix,
+			'size' => filesize($newFilePath)
 		));
 
 		$data = $this->mapMetadata($metadata);
@@ -375,12 +400,13 @@ class EventQueueHandler extends AbstractTask {
 		$fileObject = $this->getFileObject($mamId);
 
 		if ($fileObject === NULL) {
+			$this->reason = 'updateAsset: file object does not exists';
 			return FALSE;
 		}
 
 		$derivateSuffix = $this->getDerivateExtension($mamId);
 
-		if (strlen($derivateSuffix) > 0) {
+		if (strlen($derivateSuffix) > 0 && strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== $derivateSuffix) {
 			$filename .= '.' . $derivateSuffix;
 		}
 
@@ -389,6 +415,7 @@ class EventQueueHandler extends AbstractTask {
 
 		if (FALSE == $this->fileExists($newFilePath) && FALSE === $this->fileExists($oldFilePath)) {
 			// echo 'file does not exist: ' . Path::join($filepath, $filename) . chr(10);
+			$this->reason = 'updateAsset: file does not exist: ' . Path::join($filepath, $filename);
 			return FALSE;
 		}
 
@@ -403,6 +430,10 @@ class EventQueueHandler extends AbstractTask {
 		if ($oldFilePath !== $newFilePath) {
 			$this->moveFile($mamId, $filepath, $filename);
 		}
+
+		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file', 'uid = ' . $fileObject->getUid(), array(
+			'size' => filesize($newFilePath)
+		));
 
 		$data = $this->mapMetadata($metadata);
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file_metadata', 'file=' . $fileObject->getUid(), $data);
@@ -439,7 +470,16 @@ class EventQueueHandler extends AbstractTask {
 			if ($fileObject === NULL) {
 				return;
 			}
-			$this->resourceStorage->deleteFile($fileObject);
+			try {
+				$this->resourceStorage->deleteFile($fileObject);
+			} catch(\Exception $e) {
+				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', $fileObject->getPublicUrl() . "\n", FILE_APPEND);
+				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', $e->getMessage() . "\n", FILE_APPEND);
+				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', var_export($this->resourceStorage->checkUserActionPermission('delete', 'File'), true) . "\n", FILE_APPEND);
+				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', var_export($this->resourceStorage->isWithinFileMountBoundaries($fileObject, true), true) . "\n", FILE_APPEND);
+				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', var_export($this->resourceStorage->isWritable(), true) . "\n", FILE_APPEND);
+			}
 		} else {
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('sys_file', 'tx_falmam_id = "' . $mamId . '"');
 		}
@@ -460,9 +500,9 @@ class EventQueueHandler extends AbstractTask {
 		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'*',
 			'tx_falmam_event_queue',
-			'(status = "NEW" AND skipuntil < ' . time() . ') OR (status = "CLAIMED" AND tstamp < ' . (time() - $reclaimTime) . ')',
+			'(status = "NEW" AND skipuntil < ' . time() . ') OR (status = "CLAIMED" AND tstamp < ' . (time() - $this->reclaimTime) . ')',
 			'',
-			'event_id',
+			'skipuntil ASC, event_id',
 			'5',
 			'object_id'
 		);
@@ -554,7 +594,7 @@ class EventQueueHandler extends AbstractTask {
 	 * mamId
 	 *
 	 * @param  string $mamId
-	 * @return void
+	 * @return File
 	 */
 	public function getFileObject($mamId) {
 		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
@@ -669,7 +709,11 @@ class EventQueueHandler extends AbstractTask {
 				if (!is_dir($filepath)) {
 					mkdir($filepath, 0777, TRUE);
 				}
-				$folder = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $storagePath);
+				try {
+					$folder = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $storagePath);
+				} catch (\Exception $e) {
+					return;
+				}
 				$this->resourceStorage->moveFile($fileObject, $folder, $filename);
 
 				$this->cleanupEmptyFoldersInRootline(dirname($oldFilePath));

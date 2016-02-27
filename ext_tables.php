@@ -15,7 +15,7 @@ $TCA['tx_falmam_state'] = array(
             'disabled' => 'hidden',
         ),
         'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'Configuration/Tca/State.php',
-        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'icon_tx_falmam_state.gif',
+        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_state.gif',
     ),
 );
 t3lib_extMgm::allowTableOnStandardPages('tx_falmam_state');
@@ -29,7 +29,7 @@ $TCA['tx_falmam_event_queue'] = array(
         'cruser_id' => 'cruser_id',
         'default_sortby' => 'ORDER BY crdate',
         'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'Configuration/Tca/Queue.php',
-        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'icon_tx_falmam_event_queue.gif',
+        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_event_queue.gif',
     ),
 );
 t3lib_extMgm::allowTableOnStandardPages('tx_falmam_event_queue');
@@ -43,10 +43,24 @@ $TCA['tx_falmam_mapping'] = array(
         'cruser_id' => 'cruser_id',
         'default_sortby' => 'ORDER BY crdate',
         'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'Configuration/Tca/Mapping.php',
-        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'icon_tx_falmam_mapping.gif',
+        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_mapping.gif',
     ),
 );
 t3lib_extMgm::allowTableOnStandardPages('tx_falmam_mapping');
+
+$TCA['tx_falmam_log'] = array(
+    'ctrl' => array(
+        'title'     => 'LLL:EXT:fal_mam/locallang_db.xml:tx_falmam_log',
+        'label'     => 'uid',
+        'tstamp'    => 'tstamp',
+        'crdate'    => 'crdate',
+        'cruser_id' => 'cruser_id',
+        'default_sortby' => 'ORDER BY crdate',
+        'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'Configuration/Tca/Log.php',
+        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_log.gif',
+    ),
+);
+t3lib_extMgm::allowTableOnStandardPages('tx_falmam_log');
 
 if (TYPO3_MODE === 'BE') {
 
@@ -59,7 +73,7 @@ if (TYPO3_MODE === 'BE') {
         'mam_dashboard', // Submodule key
         '',                     // Position
         array(
-            'Dashboard' => 'index,configuration,sync',
+            'Dashboard' => 'index,configuration,sync,skipHistory,analyze',
         ),
         array(
             'access' => 'user,group',

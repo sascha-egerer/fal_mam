@@ -188,7 +188,7 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 	public function login() {
 		$response = $this->getRequest('login', array(
 			$this->username,
-			$this->password,
+			urlencode($this->password),
 			$this->customer
 		));
 		if (isset($response['sessionID'])) {
@@ -356,12 +356,12 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 
 		ob_start();
 		if (!file_exists(dirname($temporaryFilename))) {
-			mkdir(dirname($temporaryFilename), 0777, TRUE);
+			mkdir(dirname($temporaryFilename), octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask']), TRUE);
 		}
 
 		$fp = fopen($temporaryFilename, 'w+');
 		$ch = curl_init($uri);
-		$headerBuff = fopen('/tmp/headers', 'w+');
+		$headerBuff = fopen(tempnam(sys_get_temp_dir(), 'header-buff' . $objectId), 'w+');
 
 		curl_setopt($ch, CURLOPT_TIMEOUT, 500);
 		curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -382,13 +382,14 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		fclose($fp);
 		$output = ob_get_clean();
 
-		if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== $derivateSuffix)	{
+		if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) != strtolower($derivateSuffix)) {
 			$filename = $filename . '.' . $derivateSuffix;
 		}
 		if (!file_exists(dirname($filename))) {
-			mkdir(dirname($filename), 0777, TRUE);
+			mkdir(dirname($filename), octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask']), TRUE);
 		}
 		rename($temporaryFilename, $filename);
+		chmod($filename, octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask']));
 
 		return $derivateSuffix;
 	}

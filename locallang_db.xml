@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>database</type>
+		<description>Language labels for database tables/fields belonging to extension 'rgmediaimages'</description>
+	</meta>
+	<data type="array">
+		<!-- DEFAULT -->
+		<languageKey index="default" type="array">
+			<label index="tx_falmam_log">FAL-MAM Log</label>
+			<label index="tx_falmam_state">FAL-MAM State</label>
+            <label index="tx_falmam_event_queue">FAL-MAM Event Queue</label>
+            <label index="tx_falmam_mapping">FAL-MAM Mapping</label>
+		</languageKey>
+		
+	</data>
+</T3locallang>

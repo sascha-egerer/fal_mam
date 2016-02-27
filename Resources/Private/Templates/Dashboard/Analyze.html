@@ -1,0 +1,34 @@
+<f:layout name="Backend" />
+
+<f:section name="docheader-buttons">
+	<f:be.buttons.icon uri="javascript:document.configurationform.submit();" icon="actions-document-save" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:save')}" />
+</f:section>
+
+<f:section name="module-headline">
+	<h3>Configuration</h3>
+</f:section>
+
+<f:section name="Content">
+	<f:flashMessages renderMode="div" />
+
+	<div class="headerRow ui-helper-clearfix">
+		<div class="typo3-extensionmanager-headerRowLeft">
+		</div>
+		<div class="typo3-extensionmanager-headerRowRight">
+		</div>
+	</div>
+	<f:form action="analyze">
+		<f:form.textfield name="uuid" value="{field.value_map}" placeholder="MAM uuid" />
+		<button type="submit">Analyze</button>
+	</f:form>
+
+	<f:if condition="{beans}">
+		<f:debug>{beans}</f:debug>
+	</f:if>
+
+	<style type="text/css">
+		body .Extbase-Utility-Debugger-VarDump-Floating  {
+			margin-top: 130px;
+		}
+	</style>
+</f:section>

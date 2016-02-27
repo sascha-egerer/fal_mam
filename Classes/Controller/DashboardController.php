@@ -53,7 +53,7 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 			'tx_falmam_event_queue',
 			'status != "DONE"',
 			'',
-			'event_id',
+			'event_id DESC',
 			$this->eventsPerPage . ' OFFSET ' . ($this->eventsPerPage * $page)
 		);
 		$this->view->assign('events', $rows);
@@ -64,7 +64,7 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
 			'SUM(runtime) / COUNT(uid) as seconds_per_event',
 			'tx_falmam_event_queue',
-			'status = "DONE" AND tstamp > "' . (time() - (60 * 60)) . '"'
+			'status = "DONE" AND tstamp > "' . (time() - (60 * 10)) . '"'
 		);
 		// take full log into account if nothing happened in the last hour
 		if ($row['seconds_per_event'] === 0) {
@@ -78,7 +78,9 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 		// $runtimes = $this->getEventQueueRuntimes($totalPending);
 		$runtimes = array();
 		$runtimes['averageRuntime'] = intval($row['seconds_per_event']);
-		$runtimes['remainingRuntime'] = $this->convertSecondsToHumanTime((($row['seconds_per_event'] * $totalPending)));
+		$runtimes['remainingRuntime'] = $this->convertSecondsToHumanTime(
+			(intval($row['seconds_per_event'])/1000) * $totalPending
+		);
 		$this->view->assign('runtimes', $runtimes);
 	}
 
@@ -123,6 +125,47 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 		$this->addFlashMessage('full synchronisation will start shortly.');
 		$this->redirect('configuration');
 	}
+
+	/**
+	 * start a full synchronisation
+	 *
+	 * @param string $uuid
+	 * @return void
+	 */
+	public function analyzeAction($uuid = NULL) {
+		if ($uuid !== NULL) {
+			$beans = $this->client->getBeans($uuid);
+			$this->view->assign('beans', $beans);
+		}
+	}
+
+	/**
+	 * start a full synchronisation
+	 *
+	 * @return void
+	 */
+	public function skipHistoryAction() {
+
+		if (isset($_REQUEST['eventId'])) {
+			$lastEventId = intval($_REQUEST['eventId']);
+		} else {
+			$lastEventId = 0;
+			$break = 0;
+			while (count($events = $this->client->getEvents($lastEventId + 1)) > 0) {
+				$last = end($events);
+				$lastEventId = $last['id'];
+			}
+		}
+
+		echo 'setting event id to: ' . $lastEventId . '<br />';
+		$this->state->setEventId($lastEventId);
+		$this->state->save();
+
+		echo 'flushing events table<br />';
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', '1=1');
+		return '';
+	}
+
 	/**
 	 * check if the configuration has changed since the last time the task has
 	 * run
