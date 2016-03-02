@@ -140,6 +140,7 @@ class EventHandler extends AbstractTask {
 			$this->state->save();
 		}
 
+		$this->client->logout();
 		return TRUE;
 	}
 

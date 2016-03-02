@@ -62,10 +62,6 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 	}
 
-	public function __destruct() {
-		$this->logout();
-	}
-
 	public function initialize() {
 		 if(isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
 			$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);
@@ -199,12 +195,12 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	public function logout() {
-		// if ($this->sessionId !== NULL) {
-		// 	$this->getRequest('logout', array(
-		// 		$this->sessionId
-		// 	));
-		// 	$this->sessionId = NULL;
-		// }
+		if ($this->sessionId !== NULL) {
+			$this->getRequest('logout', array(
+				$this->sessionId
+			));
+			$this->sessionId = NULL;
+		}
 	}
 
 	/**
@@ -378,9 +374,18 @@ class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
 			$derivateSuffix = strtolower(pathinfo($derivateFilename, PATHINFO_EXTENSION));
 		}
 
+		if(preg_match('/Content-Length:[^0-9]*([0-9]+)/', $headers, $matches)) {
+			$expectedFileSize = $matches[1];
+		}
+
 		curl_close($ch);
 		fclose($fp);
 		$output = ob_get_clean();
+
+		if ($expectedFileSize > 0 && $expectedFileSize != filesize($temporaryFilename)) {
+			unlink($temporaryFilename);
+			return FALSE;
+		}
 
 		if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) != strtolower($derivateSuffix)) {
 			$filename = $filename . '.' . $derivateSuffix;

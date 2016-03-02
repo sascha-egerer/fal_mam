@@ -138,6 +138,7 @@ class EventQueueHandler extends AbstractTask {
 		}
 		$this->addLog($start, time(), $counter);
 
+		$this->client->logout();
 		return TRUE;
 	}
 
@@ -244,6 +245,9 @@ class EventQueueHandler extends AbstractTask {
 				Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name']),
 				$event['object_id']
 			);
+			if ($derivateSuffix == FALSE) {
+				return FALSE;
+			}
 
 			$result = $this->createAsset(
 				$bean['properties']['data_name'],
@@ -293,6 +297,9 @@ class EventQueueHandler extends AbstractTask {
 				Path::join($bean['properties']['data_shellpath'], $bean['properties']['data_name']),
 				$event['object_id']
 			);
+			if ($derivateSuffix == FALSE) {
+				return FALSE;
+			}
 
 			if ($fileObject === NULL) {
 				$result = $this->createAsset(
