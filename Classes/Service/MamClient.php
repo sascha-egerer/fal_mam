@@ -4,7 +4,7 @@ namespace Crossmedia\FalMam\Service;
 use Crossmedia\FalMam\Error\MamApiException;
 
 
-class MamClient implements \TYPO3\CMS\Core\SingletonInterface {
+class MamClient {
 
 	/**
 	 * @var string
