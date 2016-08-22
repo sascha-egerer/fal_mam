@@ -56,10 +56,34 @@ class MamClient {
 	 */
 	protected $defaultDerivate;
 
+	/**
+	 * @var array
+	 */
+	protected static $sessionPool = array();
+
+	/**
+	 * @var integer
+	 */
+	protected $logLevel = 3;
+
+	/**
+	 * @var \Crossmedia\FalMam\Service\Logger
+	 */
+	protected $logger;
+
 	public function __construct($autologin = TRUE) {
+		$this->logger = new \Crossmedia\FalMam\Service\Logger();
 		if ($autologin === TRUE) {
 			$this->initialize();
 		}
+		if (empty(self::$sessionPool)) {
+			register_shutdown_function(function(){
+				foreach (self::$sessionPool as $session) {
+					$session->logout();
+				}
+			});
+		}
+		self::$sessionPool[] = $this;
 	}
 
 	public function initialize() {
@@ -187,6 +211,7 @@ class MamClient {
 			urlencode($this->password),
 			$this->customer
 		));
+		$this->logger->debug('MAM API Login', $response);
 		if (isset($response['sessionID'])) {
 			$this->sessionId = $response['sessionID'];
 			return TRUE;
@@ -196,6 +221,7 @@ class MamClient {
 
 	public function logout() {
 		if ($this->sessionId !== NULL) {
+			$this->logger->debug('MAM API Logout', $this->sessionId);
 			$this->getRequest('logout', array(
 				$this->sessionId
 			));
@@ -352,7 +378,9 @@ class MamClient {
 
 		ob_start();
 		if (!file_exists(dirname($temporaryFilename))) {
+            		$oldUmask = umask(0);
 			mkdir(dirname($temporaryFilename), octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask']), TRUE);
+		        umask($oldUmask);
 		}
 
 		$fp = fopen($temporaryFilename, 'w+');
@@ -372,6 +400,22 @@ class MamClient {
 		if(preg_match('/Content-Disposition: .*filename="([^\n"]+)"/', $headers, $matches)) {
 			$derivateFilename = trim($matches[1]);
 			$derivateSuffix = strtolower(pathinfo($derivateFilename, PATHINFO_EXTENSION));
+			if (empty($derivateSuffix)) {
+				$this->logger->error("failed to determine derivate suffix!", array(
+					'uri' => $uri,
+					'derivateFilename' => $derivateFilename
+				));
+			}
+		} else {
+			$this->logger->error("missing Content-Disposition Header!",
+				array(
+					'uri' => $uri,
+					'headers' => $headers,
+					'matches' => $matches,
+					'filename' => $filename,
+					'objectId' => $objectId
+				)
+			);
 		}
 
 		if(preg_match('/Content-Length:[^0-9]*([0-9]+)/', $headers, $matches)) {
@@ -383,6 +427,15 @@ class MamClient {
 		$output = ob_get_clean();
 
 		if ($expectedFileSize > 0 && $expectedFileSize != filesize($temporaryFilename)) {
+			$this->logger->warning('The downloaded file does not match the expected filesize',
+				array(
+					'uri' => $uri,
+					'filename' => $filename,
+					'object_id' => $objectId,
+					'expected size: ' => $expectedFileSize,
+					'downloaded size: ' => filesize($temporaryFilename)
+				)
+			);
 			unlink($temporaryFilename);
 			return FALSE;
 		}
@@ -391,7 +444,9 @@ class MamClient {
 			$filename = $filename . '.' . $derivateSuffix;
 		}
 		if (!file_exists(dirname($filename))) {
+            $oldUmask = umask(0);
 			mkdir(dirname($filename), octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask']), TRUE);
+            umask($oldUmask);
 		}
 		rename($temporaryFilename, $filename);
 		chmod($filename, octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask']));

@@ -42,6 +42,15 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 	protected $state;
 
 	/**
+	 * @var \Crossmedia\FalMam\Service\Logger
+	 */
+	protected $logger;
+
+	public function __construct() {
+		$this->logger = new \Crossmedia\FalMam\Service\Logger();
+	}
+
+	/**
 	 * Show current status of the synchronisation
 	 *
 	 * @param integer $page
@@ -53,7 +62,7 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 			'tx_falmam_event_queue',
 			'status != "DONE"',
 			'',
-			'event_id DESC',
+			'crdate DESC, target ASC',
 			$this->eventsPerPage . ' OFFSET ' . ($this->eventsPerPage * $page)
 		);
 		$this->view->assign('events', $rows);

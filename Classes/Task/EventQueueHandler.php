@@ -59,6 +59,11 @@ class EventQueueHandler extends AbstractTask {
 	protected $reclaimTime = 360;
 
 	/**
+	 * @var \Crossmedia\FalMam\Service\Logger
+	 */
+	protected $logger;
+
+	/**
 	 * @param  \Crossmedia\FalMam\Service\MamClient $client
 	 * @return void
 	 */
@@ -112,6 +117,7 @@ class EventQueueHandler extends AbstractTask {
 	 */
 	public function execute() {
 		$this->initialize();
+		$this->logger = new \Crossmedia\FalMam\Service\Logger();
 
 		$counter = 0;
 		$start = time();
@@ -121,17 +127,20 @@ class EventQueueHandler extends AbstractTask {
 
 			if ($event === NULL) {
 				// nothing left to do
+				$this->client->logout();
 				return TRUE;
 			}
 			$counter++;
 
-			echo $event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target'] . chr(10);
+			#echo $event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target'] . chr(10);
+			#$this->logger->debug($event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target']);
 			$success = $this->processEvent($event);
 
 			if ($success === TRUE) {
 				$this->finnishEvent($event);
 			} else {
 				$this->rescheduleEvent($event);
+				$this->logger->warning('rescheduling event', $event);
 				// echo $this->reason . chr(10);
 			}
 			unset($event);
@@ -207,10 +216,12 @@ class EventQueueHandler extends AbstractTask {
 	 */
 	public function processDeleteEvent($event) {
 		if ($event['target'] == 'metadata' || $event['target'] == 'both') {
+			$this->logger->debug('deleting asset metadata', $event);
 			$this->deleteAsset($event['object_id']);
 		}
 
 		if ($event['target'] == 'file' || $event['target'] == 'both') {
+			$this->logger->debug('deleting asset file', $event);
 			$this->deleteAsset($event['object_id']);
 		}
 
@@ -235,6 +246,7 @@ class EventQueueHandler extends AbstractTask {
 		$result = TRUE;
 
 		if ($bean['type'] == 'folder') {
+			$this->logger->debug('creating folder', $bean);
 			$this->createFolder($bean['properties']['data_shellpath']);
 			unset($bean, $beans);
 			return TRUE;
@@ -246,6 +258,13 @@ class EventQueueHandler extends AbstractTask {
 				$event['object_id']
 			);
 			if ($derivateSuffix == FALSE) {
+				// $this->logger->warning(
+				// 	'failed to identify derivate suffix',
+				// 	array(
+				// 		'bean' => $bean,
+				// 		'event' => $event
+				// 	)
+				// );
 				return FALSE;
 			}
 
@@ -255,6 +274,13 @@ class EventQueueHandler extends AbstractTask {
 				$event['object_id'],
 				$bean['properties'],
 				$derivateSuffix
+			);
+			$this->logger->debug(
+				'sucessfully fetched file',
+				array(
+					'bean' => $bean,
+					'event' => $event
+				)
 			);
 
 			// call hook after creating a file
@@ -269,6 +295,13 @@ class EventQueueHandler extends AbstractTask {
 				$bean['properties']['data_shellpath'],
 				$event['object_id'],
 				$bean['properties']
+			);
+			$this->logger->debug(
+				'added metadata for file',
+				array(
+					'bean' => $bean,
+					'event' => $event
+				)
 			);
 		}
 		unset($bean, $beans);
@@ -298,6 +331,13 @@ class EventQueueHandler extends AbstractTask {
 				$event['object_id']
 			);
 			if ($derivateSuffix == FALSE) {
+				$this->logger->warning(
+					'failed to identify derivate suffix',
+					array(
+						'bean' => $bean,
+						'event' => $event
+					)
+				);
 				return FALSE;
 			}
 
@@ -309,6 +349,14 @@ class EventQueueHandler extends AbstractTask {
 					$bean['properties']
 				);
 			}
+
+			$this->logger->debug(
+				'sucessfully fetched file',
+				array(
+					'bean' => $bean,
+					'event' => $event
+				)
+			);
 
 			// call hook after creating a file
 			$this->callHook('fileUpdated', array(
@@ -322,6 +370,13 @@ class EventQueueHandler extends AbstractTask {
 				$bean['properties']['data_shellpath'],
 				$event['object_id'],
 				$bean['properties']
+			);
+			$this->logger->debug(
+				'added metadata for file',
+				array(
+					'bean' => $bean,
+					'event' => $event
+				)
 			);
 		}
 		unset($bean, $beans);
@@ -357,6 +412,14 @@ class EventQueueHandler extends AbstractTask {
 
 		if (FALSE == $this->fileExists(Path::join($filepath, $filename))) {
 			$this->reason = 'no file has been downloaded';
+			$this->logger->error('the file was not downloaded!',
+				array(
+					'filepath' => Path::join($filepath, $filename),
+					'metadata' => $metadata,
+					'object_id' => $mamId,
+					'derivateSuffix' => $derivateSuffix
+				)
+			);
 			return FALSE;
 		}
 
@@ -370,6 +433,12 @@ class EventQueueHandler extends AbstractTask {
 			$fileObject = $this->resourceFactory->getObjectFromCombinedIdentifier($this->resourceStorage->getUid() . ':/' . $path);
 		} catch (\Exception $e) {
 			$this->reason = 'file could not be imported into fal';
+			$this->logger->warning('file could not be imported into fal',
+				array(
+					'filepath' => Path::join($filepath, $filename),
+					'exception' => $e->getMessage()
+				)
+			);
 			return FALSE;
 		}
 		$fileObject->_getMetaData();
@@ -377,7 +446,7 @@ class EventQueueHandler extends AbstractTask {
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file', 'uid = ' . $fileObject->getUid(), array(
 			'tx_falmam_id' => $mamId,
 			'tx_falmam_derivate_suffix' => $derivateSuffix,
-			'size' => filesize($newFilePath)
+			'size' => filesize(Path::join($filepath, $filename))
 		));
 
 		$data = $this->mapMetadata($metadata);
@@ -408,6 +477,13 @@ class EventQueueHandler extends AbstractTask {
 
 		if ($fileObject === NULL) {
 			$this->reason = 'updateAsset: file object does not exists';
+			$this->logger->warning('updateAsset: file object does not exists',
+				array(
+					'filepath' => Path::join($filepath, $filename),
+					'object_id' => $mamId,
+					'metadata' => $metadata
+				)
+			);
 			return FALSE;
 		}
 
@@ -423,6 +499,13 @@ class EventQueueHandler extends AbstractTask {
 		if (FALSE == $this->fileExists($newFilePath) && FALSE === $this->fileExists($oldFilePath)) {
 			// echo 'file does not exist: ' . Path::join($filepath, $filename) . chr(10);
 			$this->reason = 'updateAsset: file does not exist: ' . Path::join($filepath, $filename);
+			$this->logger->warning('updateAsset: file does not exist',
+				array(
+					'filepath' => Path::join($filepath, $filename),
+					'object_id' => $mamId,
+					'metadata' => $metadata
+				)
+			);
 			return FALSE;
 		}
 
@@ -509,7 +592,7 @@ class EventQueueHandler extends AbstractTask {
 			'tx_falmam_event_queue',
 			'(status = "NEW" AND skipuntil < ' . time() . ') OR (status = "CLAIMED" AND tstamp < ' . (time() - $this->reclaimTime) . ')',
 			'',
-			'skipuntil ASC, event_id',
+			'skipuntil ASC, crdate ASC, target ASC',
 			'5',
 			'object_id'
 		);
@@ -777,7 +860,8 @@ class EventQueueHandler extends AbstractTask {
 	 * @return void
 	 */
 	public function callHook($hookIdentifier, $params) {
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['EventQueueHandler'][$hookIdentifier])) {
+		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['EventQueueHandler'])
+			&& is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['EventQueueHandler'][$hookIdentifier])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['fal_mam']['EventQueueHandler'][$hookIdentifier] as $reference) {
 				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($reference, $params, $this);
 			}

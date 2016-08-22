@@ -69,7 +69,7 @@ if (TYPO3_MODE === 'BE') {
      */
     \TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(
         'Crossmedia.' . $_EXTKEY,
-        'tools',     // Make module a submodule of 'tools'
+        'user',     // Make module a submodule of 'user'
         'mam_dashboard', // Submodule key
         '',                     // Position
         array(

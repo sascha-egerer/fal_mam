@@ -34,6 +34,11 @@ class EventHandler extends AbstractTask {
 	protected $configuration;
 
 	/**
+	 * @var \Crossmedia\FalMam\Service\Logger
+	 */
+	protected $logger;
+
+	/**
 	 * @param  \Crossmedia\FalMam\Service\MamClient $client
 	 * @return void
 	 */
@@ -78,6 +83,7 @@ class EventHandler extends AbstractTask {
 	 */
 	public function execute() {
 		$this->initialize();
+		$this->logger = new \Crossmedia\FalMam\Service\Logger();
 
 		if ($this->hasConfigurationChanged() && $this->state->getNotified() < (time() - (60 *60 * 24))) {
 			// notify someone to update the configuration
@@ -122,6 +128,11 @@ class EventHandler extends AbstractTask {
 		while (count($events = $this->client->getEvents($this->state->getEventId() + 1)) > 0) {
 			$start = microtime(TRUE);
 			$data = array();
+			$typeCounter = array(
+				'delete' => 0,
+				'update' => 0,
+				'create' => 0
+			);
 			foreach ($events as $key => $event) {
 				$data['tx_falmam_event_queue']['NEW' . $event['id']] = array(
 					'pid' => $this->configuration->storage_pid,
@@ -131,10 +142,18 @@ class EventHandler extends AbstractTask {
 					'object_id' => $event['object_id'],
 					'status' => 'NEW'
 				);
+				$typeCounter[$eventTypes[$event['event_type']]]++;
 			}
 
 			$this->saveEvents($data);
 			// echo count($events) . ': ' . (microtime(TRUE) - $start) . chr(10);
+			if (count($events) > 0) {
+				$this->logger->info('Received new Events', array(
+					'total' => count($events),
+					'counter per type' => $typeCounter,
+					'events' => $events
+				));
+			}
 
 			$this->state->setEventId($event['id']);
 			$this->state->save();

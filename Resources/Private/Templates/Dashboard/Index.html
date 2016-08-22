@@ -53,4 +53,32 @@
 			</f:for>
 		</tbody>
 	</table>
+
+
+	<table id="typo3-extension-list" class="t3-table typo3-extension-list">
+		<thead>
+			<tr>
+				<th>UID</th>
+				<th>ClassName</th>
+				<th>Running</th>
+				<th>Last Execution</th>
+				<th>Next Execution</th>
+				<th>Execution Failed</th>
+				<th>Disabled</th>
+			</tr>
+		</thead>
+		<tbody>
+			<f:for each="{schedulerTasks}" as="schedulerTask">
+				<tr>
+					<td>{schedulerTask.uid}</td>
+					<td>{schedulerTask.className}</td>
+					<td>{schedulerTask.running}</td>
+					<td>{schedulerTask.lastexecution_time}</td>
+					<td>{schedulerTask.nextexecution}</td>
+					<td>{schedulerTask.lastexecution_failure}</td>
+					<td>{schedulerTask.disabled}</td>
+				</tr>
+			</f:for>
+		</tbody>
+	</table>
 </f:section>
