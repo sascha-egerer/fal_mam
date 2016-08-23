@@ -133,7 +133,7 @@ class EventQueueHandler extends AbstractTask {
 			$counter++;
 
 			#echo $event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target'] . chr(10);
-			#$this->logger->debug($event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target']);
+			$this->logger->debug($event['object_id'] . ' ' . $event['event_type'] . ':' . $event['target']);
 			$success = $this->processEvent($event);
 
 			if ($success === TRUE) {
@@ -258,13 +258,6 @@ class EventQueueHandler extends AbstractTask {
 				$event['object_id']
 			);
 			if ($derivateSuffix == FALSE) {
-				// $this->logger->warning(
-				// 	'failed to identify derivate suffix',
-				// 	array(
-				// 		'bean' => $bean,
-				// 		'event' => $event
-				// 	)
-				// );
 				return FALSE;
 			}
 
@@ -569,6 +562,7 @@ class EventQueueHandler extends AbstractTask {
 				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', var_export($this->resourceStorage->checkUserActionPermission('delete', 'File'), true) . "\n", FILE_APPEND);
 				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', var_export($this->resourceStorage->isWithinFileMountBoundaries($fileObject, true), true) . "\n", FILE_APPEND);
 				file_put_contents('/var/www/vhosts/wanzl.com_2015/logs/fal_mam_delete_exception.dat', var_export($this->resourceStorage->isWritable(), true) . "\n", FILE_APPEND);
+				$this->logging->captureException($e);
 			}
 		} else {
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('sys_file', 'tx_falmam_id = "' . $mamId . '"');

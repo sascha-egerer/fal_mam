@@ -11,20 +11,40 @@ class Logger {
 	/**
 	 * @var integer
 	 */
-	protected $logLevel = 3;
+	protected $logLevel = 1;
 
 	public function __construct($autologin = TRUE) {
 		require_once(PATH_site . 'typo3conf/ext/fal_mam/Resources/PHP/sentry-php/lib/Raven/Autoloader.php');
 		\Raven_Autoloader::register();
-		$this->client = new \Raven_Client('http://f6e823b143eb465cb5b741d62b9007b0:b5534f5496434a6f9c12795a283509c1@docker.mia3.com:9000/2');
-		if(isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
-			$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);
-			$this->client->user_context($configuration);
+
+		if(!isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
+			return;
 		}
+		$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);
+		if (!isset($configuration['fal_mam.']['logging.'])) {
+			return;
+		}
+		$logConfiguration = $configuration['fal_mam.']['logging.'];
+		if (empty($logConfiguration['baseUrl'])) {
+			return;
+		}
+		$this->client = new \Raven_Client($logConfiguration['baseUrl']);
+		$this->client->user_context($configuration);
+
+		$this->logLevel = intval($logConfiguration['log_level']);
 	}
 
 	public function debug($message, $context = array()) {
+		if ($this->client === NULL) {
+			return;
+		}
 		if ($this->logLevel < 3) {
+			$this->client->extra_context($context);
+			$this->client->breadcrumbs->record(array(
+				'message' => $message,
+				'data' => $context,
+				'level' => 'debug',
+			));
 			return;
 		}
 
@@ -37,7 +57,16 @@ class Logger {
 	}
 
 	public function info($message, $context = array()) {
+		if ($this->client === NULL) {
+			return;
+		}
 		if ($this->logLevel < 2) {
+			$this->client->extra_context($context);
+			$this->client->breadcrumbs->record(array(
+				'message' => $message,
+				'data' => $context,
+				'level' => 'info',
+			));
 			return;
 		}
 		$this->client->captureMessage($message, array(),
@@ -49,7 +78,16 @@ class Logger {
 	}
 
 	public function warning($message, $context = array()) {
+		if ($this->client === NULL) {
+			return;
+		}
 		if ($this->logLevel < 1) {
+			$this->client->extra_context($context);
+			$this->client->breadcrumbs->record(array(
+				'message' => $message,
+				'data' => $context,
+				'level' => 'warning',
+			));
 			return;
 		}
 		$this->client->captureMessage($message, array(),
@@ -61,7 +99,16 @@ class Logger {
 	}
 
 	public function error($message, $context = array()) {
+		if ($this->client === NULL) {
+			return;
+		}
 		if ($this->logLevel < 0) {
+			$this->client->extra_context($context);
+			$this->client->breadcrumbs->record(array(
+				'message' => $message,
+				'data' => $context,
+				'level' => 'error',
+			));
 			return;
 		}
 		$this->client->captureMessage($message, array(),
@@ -73,6 +120,9 @@ class Logger {
 	}
 
 	public function fatal($message, $context = array()) {
+		if ($this->client === NULL) {
+			return;
+		}
 		if ($this->logLevel < 0) {
 			return;
 		}
@@ -82,5 +132,12 @@ class Logger {
 				'extra' => $context
 			)
 		);
+	}
+
+	public function captureException($exception) {
+		if ($this->client === NULL) {
+			return;
+		}
+		$this->client->captureException($exception);
 	}
 }

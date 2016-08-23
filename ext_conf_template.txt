@@ -25,3 +25,9 @@ fal_mam.mam_shell_path =
 
 # cat=mam_driver/80; type=string; label=LLL:EXT:fal_mam/Resources/Private/Language/locallang_ext_conf.xlf:fal_mam.admin_mail
 fal_mam.admin_mail =
+
+# cat=logging/10; type=string; label=Logging BaseUrl (Sentry)
+fal_mam.logging.baseUrl =
+
+# cat=logging/20; type=integer; label=LogLevel: (3: Debug, 2: Info, 1: Warning, 0: Fatal)
+fal_mam.logging.log_level = 1

@@ -126,6 +126,8 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 	 * @return void
 	 */
 	public function syncAction() {
+		$this->logger->warning('Full synchronisation triggered!');
+
 		// flush "outdated" pending events
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', '1=1');
 
