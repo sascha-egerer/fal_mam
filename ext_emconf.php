@@ -14,8 +14,8 @@ $EM_CONF[$_EXTKEY] = array (
 	'title' => 'FAL MAM Driver',
 	'description' => 'Provides a Driver for the Crossmedia MAM.',
 	'category' => 'plugin',
-	'version' => '1.0.0',
-	'state' => 'alpha',
+	'version' => '1.1.0',
+	'state' => 'stable',
 	'uploadfolder' => true,
 	'createDirs' => '',
 	'clearcacheonload' => true,
@@ -27,7 +27,7 @@ $EM_CONF[$_EXTKEY] = array (
 		array (
 			'filemetadata' => '*',
 			'php' => '5.3.3-0.0.0',
-			'typo3' => '6.2.0-6.2.99',
+			'typo3' => '6.2.0-7.6.99',
 		),
 		'conflicts' =>
 		array (
