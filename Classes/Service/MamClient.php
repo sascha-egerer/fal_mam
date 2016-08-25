@@ -387,7 +387,8 @@ class MamClient {
 		$ch = curl_init($uri);
 		$headerBuff = fopen(tempnam(sys_get_temp_dir(), 'header-buff' . $objectId), 'w+');
 
-		curl_setopt($ch, CURLOPT_TIMEOUT, 500);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 0);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 60);
 		curl_setopt($ch, CURLOPT_FILE, $fp);
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($ch, CURLOPT_WRITEHEADER, $headerBuff);
@@ -420,6 +421,16 @@ class MamClient {
 
 		if(preg_match('/Content-Length:[^0-9]*([0-9]+)/', $headers, $matches)) {
 			$expectedFileSize = $matches[1];
+		}
+
+		if (!empty($curlError = curl_error($ch))) {
+			$this->logger->warning('CURL Failed with the Error: ' . $curlError, array(
+				'uri' => $uri,
+				'filename' => $filename,
+				'object_id' => $objectId,
+				'expected size: ' => $expectedFileSize,
+				'downloaded size: ' => filesize($temporaryFilename)
+			));
 		}
 
 		curl_close($ch);
