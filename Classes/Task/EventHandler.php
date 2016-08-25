@@ -148,7 +148,7 @@ class EventHandler extends AbstractTask {
 			$this->saveEvents($data);
 			// echo count($events) . ': ' . (microtime(TRUE) - $start) . chr(10);
 			if (count($events) > 0) {
-				$this->logger->info('Received new Events', array(
+				$this->logger->warning('Received new Events', array(
 					'total' => count($events),
 					'counter per type' => $typeCounter,
 					'events' => $events
