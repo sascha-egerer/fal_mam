@@ -15,7 +15,7 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 	/**
 	 * @var integer
 	 */
-	protected $eventsPerPage = 50;
+	protected $eventsPerPage = 300;
 
 	/**
 	 * @var \Crossmedia\FalMam\Service\MamClient
@@ -57,15 +57,49 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 	 * @return void
 	 */
 	public function indexAction($page = 0) {
-		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-			'*',
-			'tx_falmam_event_queue',
-			'status != "DONE"',
-			'',
-			'crdate DESC, target ASC',
-			$this->eventsPerPage . ' OFFSET ' . ($this->eventsPerPage * $page)
-		);
-		$this->view->assign('events', $rows);
+		if (isset($_REQUEST['showAll']) && $_REQUEST['showAll'] == 1) {
+			$where = '1=1';
+			if ($this->request->hasArgument('search')) {
+				$where = str_replace(
+					'{search}',
+					$this->request->getArgument('search'),
+					'
+						event_id LIKE "{search}" OR
+						event_id LIKE "{search}%" OR
+						event_id LIKE "%{search}" OR
+						object_id LIKE "{search}" OR
+						object_id LIKE "{search}%" OR
+						object_id LIKE "%{search}" OR
+						event_type LIKE "{search}" OR
+						event_type LIKE "{search}%" OR
+						event_type LIKE "%{search}" OR
+						tstamp LIKE "{search}" OR
+						tstamp LIKE "{search}%"
+					'
+				);
+				$this->view->assign('search', $this->request->getArgument('search'));
+			}
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+				'*',
+				'tx_falmam_event_queue',
+				$where,
+				'',
+				'crdate DESC, target ASC',
+				$this->eventsPerPage . ' OFFSET ' . ($this->eventsPerPage * $page)
+			);
+			$this->view->assign('events', $rows);
+			$this->view->assign('showAll', $_REQUEST['showAll']);
+		} else {
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+				'*',
+				'tx_falmam_event_queue',
+				'status != "DONE"',
+				'',
+				'crdate DESC, target ASC',
+				$this->eventsPerPage . ' OFFSET ' . ($this->eventsPerPage * $page)
+			);
+			$this->view->assign('events', $rows);
+		}
 
 		$totalPending = $this->getTotalPending();
 		$this->view->assign('totalPending', $totalPending);

@@ -121,7 +121,7 @@ class EventHandler extends AbstractTask {
 		);
 
 		// flush "outdated" pending events
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', 'status = "DONE" AND tstamp < ' . (time() - 60 * 60 * 24));
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_falmam_event_queue', 'status = "DONE" AND tstamp < ' . (time() - 60 * 60 * 24 * 14));
 
 		// echo 'fetching events starting from: ' . ($this->state->getEventId() + 1) . chr(10);
 		// var_dump($this->client->getEvents($this->state->getEventId() + 1));

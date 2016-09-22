@@ -13,6 +13,11 @@
 </f:section>
 
 <f:section name="Content">
+	<style type="text/css">
+		.filter-search {
+			float: right;
+		}
+	</style>
 	<f:flashMessages renderMode="div" />
 
 	<div class="headerRow ui-helper-clearfix">
@@ -21,38 +26,45 @@
 		<div class="typo3-extensionmanager-headerRowRight">
 		</div>
 	</div>
-	<table id="typo3-extension-list" class="t3-table typo3-extension-list">
-		<thead>
-			<tr>
-				<th>ID</th>
-				<th>Date</th>
-				<th>Runtime</th>
-				<th>Status</th>
-				<th>Event Type</th>
-				<th>Target</th>
-				<th>Object ID</th>
-				<th>waiting for file until</th>
-			</tr>
-		</thead>
-		<tbody>
-			<f:for each="{events}" as="event">
+	<f:form action="index" addQueryString="1">
+		<f:if condition="{showAll}">
+			<div class="filter">
+				<f:form.textfield type="search" class="filter-search" placeholder="Search" value="{search}" />
+			</div>
+		</f:if>
+		<table id="typo3-extension-list" class="t3-table typo3-extension-list">
+			<thead>
 				<tr>
-					<td>{event.event_id}</td>
-					<td><f:format.date format="H:i:s d.m.Y">{event.crdate}</f:format.date></td>
-					<td>{event.runtime}ms</td>
-					<td>{event.status}</td>
-					<td>{event.event_type}</td>
-					<td>{event.target}</td>
-					<td>{event.object_id}</td>
-					<td>
-						<f:if condition="{event.skipuntil}">
-							<f:format.date format="H:i:s d.m.Y">{event.skipuntil}</f:format.date>
-						</f:if>
-					</td>
+					<th>ID</th>
+					<th>Date</th>
+					<th>Runtime</th>
+					<th>Status</th>
+					<th>Event Type</th>
+					<th>Target</th>
+					<th>Object ID</th>
+					<th>waiting for file until</th>
 				</tr>
-			</f:for>
-		</tbody>
-	</table>
+			</thead>
+			<tbody>
+				<f:for each="{events}" as="event">
+					<tr>
+						<td>{event.event_id}</td>
+						<td><f:format.date format="H:i:s d.m.Y">{event.crdate}</f:format.date></td>
+						<td>{event.runtime}ms</td>
+						<td>{event.status}</td>
+						<td>{event.event_type}</td>
+						<td>{event.target}</td>
+						<td>{event.object_id}</td>
+						<td>
+							<f:if condition="{event.skipuntil}">
+								<f:format.date format="H:i:s d.m.Y">{event.skipuntil}</f:format.date>
+							</f:if>
+						</td>
+					</tr>
+				</f:for>
+			</tbody>
+		</table>
+	</f:form>
 
 
 	<table id="typo3-extension-list" class="t3-table typo3-extension-list">
