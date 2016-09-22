@@ -586,7 +586,7 @@ class EventQueueHandler extends AbstractTask {
 			'tx_falmam_event_queue',
 			'(status = "NEW" AND skipuntil < ' . time() . ') OR (status = "CLAIMED" AND tstamp < ' . (time() - $this->reclaimTime) . ')',
 			'',
-			'skipuntil ASC, crdate ASC, target ASC',
+			'skipuntil ASC, event_id',
 			'5',
 			'object_id'
 		);
