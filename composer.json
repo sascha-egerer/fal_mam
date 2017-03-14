@@ -1,0 +1,16 @@
+{
+  "name": "crossmedia/fal_mam",
+  "description": "TYPO3 Connector for Crossmedia MAM",
+  "type": "typo3-cms-extension",
+  "authors": [
+    {
+      "name": "Marc Neuhaus",
+      "email": "marc@mia3.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Crossmedia\\FalMam\\": "Classes/"
+    }
+  }
+}
