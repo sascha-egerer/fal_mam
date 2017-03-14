@@ -8,12 +8,13 @@
       "email": "marc@mia3.com"
     }
   ],
+  "require": {
+    "rmccue/requests": "^1.7",
+    "sentry/sentry": "^1.6"
+  },
   "autoload": {
     "psr-4": {
       "Crossmedia\\FalMam\\": "Classes/"
-    },
-    "psr-0": {
-      "Requests": "Resources/PHP/Requests/library/"
     }
   }
 }
