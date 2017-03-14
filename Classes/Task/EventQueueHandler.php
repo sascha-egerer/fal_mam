@@ -160,19 +160,19 @@ class EventQueueHandler extends AbstractTask {
 	public function initialize() {
 		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
 		if ($this->client === NULL) {
-			$this->injectClient($objectManager->get('\Crossmedia\FalMam\Service\MamClient'));
+			$this->injectClient($objectManager->get('Crossmedia\FalMam\Service\MamClient'));
 		}
 		if ($this->dataHandler === NULL) {
-			$this->injectDataHandler($objectManager->get('\TYPO3\CMS\Core\DataHandling\DataHandler'));
+			$this->injectDataHandler($objectManager->get('TYPO3\CMS\Core\DataHandling\DataHandler'));
 		}
 		if ($this->state === NULL) {
-			$this->injectState($objectManager->get('\Crossmedia\FalMam\Task\EventHandlerState'));
+			$this->injectState($objectManager->get('Crossmedia\FalMam\Task\EventHandlerState'));
 		}
 		if ($this->configuration === NULL) {
-			$this->injectConfiguration($objectManager->get('\Crossmedia\FalMam\Service\Configuration'));
+			$this->injectConfiguration($objectManager->get('Crossmedia\FalMam\Service\Configuration'));
 		}
 		if ($this->resourceStorage === NULL) {
-			$storageRepository = $objectManager->get('\TYPO3\CMS\Core\Resource\StorageRepository');
+			$storageRepository = $objectManager->get('TYPO3\CMS\Core\Resource\StorageRepository');
 			$this->resourceStorage =  current($storageRepository->findByStorageType('MAM'));
 		}
 

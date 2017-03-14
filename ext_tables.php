@@ -14,11 +14,11 @@ $TCA['tx_falmam_state'] = array(
         'enablecolumns' => array(
             'disabled' => 'hidden',
         ),
-        'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'Configuration/Tca/State.php',
-        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_state.gif',
+        'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/Tca/State.php',
+        'iconfile'          => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_state.gif',
     ),
 );
-t3lib_extMgm::allowTableOnStandardPages('tx_falmam_state');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('tx_falmam_state');
 
 $TCA['tx_falmam_event_queue'] = array(
 'ctrl' => array(
@@ -28,11 +28,11 @@ $TCA['tx_falmam_event_queue'] = array(
         'crdate'    => 'crdate',
         'cruser_id' => 'cruser_id',
         'default_sortby' => 'ORDER BY crdate',
-        'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'Configuration/Tca/Queue.php',
-        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_event_queue.gif',
+        'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/Tca/Queue.php',
+        'iconfile'          => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_event_queue.gif',
     ),
 );
-t3lib_extMgm::allowTableOnStandardPages('tx_falmam_event_queue');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('tx_falmam_event_queue');
 
 $TCA['tx_falmam_mapping'] = array(
     'ctrl' => array(
@@ -42,11 +42,11 @@ $TCA['tx_falmam_mapping'] = array(
         'crdate'    => 'crdate',
         'cruser_id' => 'cruser_id',
         'default_sortby' => 'ORDER BY crdate',
-        'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'Configuration/Tca/Mapping.php',
-        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_mapping.gif',
+        'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/Tca/Mapping.php',
+        'iconfile'          => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_mapping.gif',
     ),
 );
-t3lib_extMgm::allowTableOnStandardPages('tx_falmam_mapping');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('tx_falmam_mapping');
 
 $TCA['tx_falmam_log'] = array(
     'ctrl' => array(
@@ -56,11 +56,11 @@ $TCA['tx_falmam_log'] = array(
         'crdate'    => 'crdate',
         'cruser_id' => 'cruser_id',
         'default_sortby' => 'ORDER BY crdate',
-        'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'Configuration/Tca/Log.php',
-        'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_log.gif',
+        'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/Tca/Log.php',
+        'iconfile'          => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_falmam_log.gif',
     ),
 );
-t3lib_extMgm::allowTableOnStandardPages('tx_falmam_log');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('tx_falmam_log');
 
 if (TYPO3_MODE === 'BE') {
 
@@ -104,8 +104,6 @@ $tempColumns = array(
 );
 
 
-t3lib_div::loadTCA('sys_file');
-t3lib_extMgm::addTCAcolumns('sys_file',$tempColumns,1);
-t3lib_extMgm::addToAllTCAtypes('sys_file','tx_falmam_id;;;;1-1-1,tx_falmam_derivate_suffix;;;;1-1-1');
-
-?>
+//\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadTCA('sys_file');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns('sys_file',$tempColumns,1);
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('sys_file','tx_falmam_id;;;;1-1-1,tx_falmam_derivate_suffix;;;;1-1-1');

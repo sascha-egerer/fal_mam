@@ -71,8 +71,8 @@ class EventHandlerState implements \TYPO3\CMS\Core\SingletonInterface{
 
 	public function __construct() {
 		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
-		$this->client = $objectManager->get('\Crossmedia\FalMam\Service\MamClient');
-		$this->dataHandler = $objectManager->get('\TYPO3\CMS\Core\DataHandling\DataHandler');
+		$this->client = $objectManager->get('Crossmedia\FalMam\Service\MamClient');
+		$this->dataHandler = $objectManager->get('TYPO3\CMS\Core\DataHandling\DataHandler');
 
 		if(isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
 			$configuration = unserialize($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam']);
