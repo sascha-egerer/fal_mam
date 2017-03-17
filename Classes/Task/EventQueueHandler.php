@@ -174,6 +174,10 @@ class EventQueueHandler extends AbstractTask {
 		if ($this->resourceStorage === NULL) {
 			$storageRepository = $objectManager->get('TYPO3\CMS\Core\Resource\StorageRepository');
 			$this->resourceStorage =  current($storageRepository->findByStorageType('MAM'));
+
+			if (!is_object($this->resourceStorage)) {
+				throw new \Exception('Unable to load MAM File Storage');
+			}
 		}
 
 		if ($this->resourceFactory === NULL) {
