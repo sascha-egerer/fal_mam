@@ -9,17 +9,15 @@ $registerDriver->registerDriverClass(
 	'FILE:EXT:fal_mam/Configuration/FlexForm/MamDriver.xml'
 );
 
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['Crossmedia\FalMam\Task\EventHandler'] = array(
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\Crossmedia\FalMam\Task\EventHandler::class] = array(
     'extension'        => $_EXTKEY,
     'title'            => 'LLL:EXT:' . $_EXTKEY . '/Resources/Private/Language/locallang_scheduler.xlf:eventHandler.name',
     'description'      => 'LLL:EXT:' . $_EXTKEY . '/Resources/Private/Language/locallang_scheduler.xlf:eventHandler.description'
 );
 
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['Crossmedia\FalMam\Task\EventQueueHandler'] = array(
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\Crossmedia\FalMam\Task\EventQueueHandler::class] = array(
     'extension'        => $_EXTKEY,
     'title'            => 'LLL:EXT:' . $_EXTKEY . '/Resources/Private/Language/locallang_scheduler.xlf:eventQueueHandler.name',
     'description'      => 'LLL:EXT:' . $_EXTKEY . '/Resources/Private/Language/locallang_scheduler.xlf:eventQueueHandler.description',
-    'additionalFields' => '\\Crossmedia\\FalMam\\Task\\EventQueueHandlerFieldProvider'
+    'additionalFields' => \Crossmedia\FalMam\Task\EventQueueHandlerFieldProvider::class
 );
-
-?>

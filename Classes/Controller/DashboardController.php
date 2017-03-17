@@ -1,6 +1,7 @@
 <?php
 namespace Crossmedia\FalMam\Controller;
 
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Persistence\ObjectStorage;
@@ -41,13 +42,19 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 	 */
 	protected $state;
 
-	/**
-	 * @var \Crossmedia\FalMam\Service\Logger
-	 */
-	protected $logger;
+    /**
+     * @var \Crossmedia\FalMam\Service\Logger
+     */
+    protected $logger;
+
+    /**
+     * @var DatabaseConnection
+     */
+    protected $database;
 
 	public function __construct() {
 		$this->logger = new \Crossmedia\FalMam\Service\Logger();
+		$this->database = $GLOBALS['TYPO3_DB'];
 	}
 
 	/**
@@ -79,7 +86,7 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 				);
 				$this->view->assign('search', $this->request->getArgument('search'));
 			}
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			$rows = $this->database->exec_SELECTgetRows(
 				'*',
 				'tx_falmam_event_queue',
 				$where,
@@ -90,10 +97,10 @@ class DashboardController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContro
 			$this->view->assign('events', $rows);
 			$this->view->assign('showAll', $_REQUEST['showAll']);
 		} else {
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			$rows = $this->database->exec_SELECTgetRows(
 				'*',
 				'tx_falmam_event_queue',
-				'status != "DONE"',
+				'status != "DONE" OR status IS NULL',
 				'',
 				'crdate DESC, target ASC',
 				$this->eventsPerPage . ' OFFSET ' . ($this->eventsPerPage * $page)

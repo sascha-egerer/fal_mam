@@ -14,9 +14,6 @@ class Logger {
 	protected $logLevel = 1;
 
 	public function __construct($autologin = TRUE) {
-		require_once(PATH_site . 'typo3conf/ext/fal_mam/Resources/PHP/sentry-php/lib/Raven/Autoloader.php');
-		\Raven_Autoloader::register();
-
 		if(!isset($GLOBALS['TYPO3_CONF_VARS']["EXT"]["extConf"]['fal_mam'])) {
 			return;
 		}

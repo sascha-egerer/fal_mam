@@ -1,10 +1,13 @@
+<html xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers">
 <f:layout name="Backend" />
 
 <f:section name="docheader-buttons">
-	<f:be.buttons.icon uri="javascript:document.configurationform.submit();" icon="actions-document-save" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:save')}" />
+	<a class="btn btn-default" href="javascript:document.configurationform.submit();" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:save')}">
+		<core:icon identifier="actions-document-save" alternativeMarkupIdentifier="inline" />
+	</a>
 
 	<f:link.action action="sync" style="float: right; color: #660000; font-weight: bold; ">
-		<f:be.buttons.icon icon="actions-system-refresh" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:save')}" />
+		<core:icon identifier="actions-system-refresh" alternativeMarkupIdentifier="inline" />
 		Start a full synchronisation (can take quite a while!)
 	</f:link.action>
 </f:section>
@@ -14,7 +17,7 @@
 </f:section>
 
 <f:section name="Content">
-	<f:flashMessages renderMode="div" />
+	<f:flashMessages />
 
 	<div class="headerRow ui-helper-clearfix">
 		<div class="typo3-extensionmanager-headerRowLeft">
@@ -58,3 +61,4 @@
 	</table>
 	</f:form>
 </f:section>
+</html>

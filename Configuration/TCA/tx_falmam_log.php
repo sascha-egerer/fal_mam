@@ -1,10 +1,16 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-    die ('Access denied.');
-}
 
-$TCA['tx_falmam_log'] = array(
-    'ctrl' => $TCA['tx_falmam_log']['ctrl'],
+$GLOBALS['TCA']['tx_falmam_log'] = array(
+    'ctrl' => [
+        'title'     => 'LLL:EXT:fal_mam/locallang_db.xml:tx_falmam_log',
+        'label'     => 'uid',
+        'tstamp'    => 'tstamp',
+        'crdate'    => 'crdate',
+        'cruser_id' => 'cruser_id',
+        'default_sortby' => 'ORDER BY crdate',
+        'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('fal_mam') . 'Configuration/Tca/Log.php',
+        'iconfile'          => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('fal_mam') . 'Resources/Public/Icons/tx_falmam_log.gif',
+    ],
     'interface' => array(
         'showRecordFieldList' => 'hidden,connector_name,config_hash,event_id,start_time,end_time,event_count,runtime'
     ),

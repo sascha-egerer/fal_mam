@@ -1,10 +1,16 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-    die ('Access denied.');
-}
 
-$TCA['tx_falmam_mapping'] = array(
-    'ctrl' => $TCA['tx_falmam_mapping']['ctrl'],
+$GLOBALS['TCA']['tx_falmam_mapping'] = array(
+    'ctrl' => [
+        'title'     => 'LLL:EXT:fal_mam/locallang_db.xml:tx_falmam_mapping',
+        'label'     => 'uid',
+        'tstamp'    => 'tstamp',
+        'crdate'    => 'crdate',
+        'cruser_id' => 'cruser_id',
+        'default_sortby' => 'ORDER BY crdate',
+        'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('fal_mam') . 'Configuration/Tca/Mapping.php',
+        'iconfile'          => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('fal_mam') . 'Resources/Public/Icons/tx_falmam_mapping.gif',
+    ],
     'interface' => array(
         'showRecordFieldList' => 'connector_name,mam_field,fal_field'
     ),

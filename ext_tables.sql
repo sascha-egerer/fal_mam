@@ -86,6 +86,6 @@ CREATE TABLE tx_falmam_log (
 # Table structure for table 'sys_file'
 #
 CREATE TABLE sys_file (
-    tx_falmam_id tinytext
-    tx_falmam_derivate_suffix tinytext
+    tx_falmam_id varchar(512),
+    tx_falmam_derivate_suffix varchar(512)
 );

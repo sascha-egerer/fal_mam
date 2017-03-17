@@ -1,14 +1,23 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-    die ('Access denied.');
-}
 
-$TCA['tx_falmam_state'] = array(
-    'ctrl' => $TCA['tx_falmam_state']['ctrl'],
+$GLOBALS['TCA']['tx_falmam_state'] = array(
+    'ctrl' => [
+        'title'     => 'LLL:EXT:fal_mam/locallang_db.xml:tx_falmam_state',
+        'label'     => 'uid',
+        'tstamp'    => 'tstamp',
+        'crdate'    => 'crdate',
+        'cruser_id' => 'cruser_id',
+        'default_sortby' => 'ORDER BY crdate',
+        'delete' => 'deleted',
+        'enablecolumns' => array(
+            'disabled' => 'hidden',
+        ),
+        'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('fal_mam') . 'Configuration/Tca/State.php',
+        'iconfile'          => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('fal_mam') . 'Resources/Public/Icons/tx_falmam_state.gif',
+    ],
     'interface' => array(
         'showRecordFieldList' => 'hidden,connector_name,config_hash,event_id,sync_id,sync_offset,notified'
     ),
-    'feInterface' => $TCA['tx_falmam_state']['feInterface'],
     'columns' => array(
         'hidden' => array(
             'exclude' => 1,
