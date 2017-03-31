@@ -10,7 +10,13 @@
   ],
   "require": {
     "rmccue/requests": "^1.7",
-    "sentry/sentry": "^1.6"
+    "sentry/sentry": "^1.6",
+    "typo3/cms": ">=6.2.30 <=8.7.99",
+    "typo3/cms-filemetadata": "*"
+  },
+  "replace": {
+    "fal_mam": "self.version",
+    "typo3-ter/fal_mam": "self.version"
   },
   "autoload": {
     "psr-4": {
